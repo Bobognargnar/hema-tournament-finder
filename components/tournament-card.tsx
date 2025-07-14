@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import type { Tournament, DisciplineDetail } from "@/types/tournament"
-import { getTournamentTypeColor } from "@/services/tournament-api"
+import { getTournamentTypeColor } from "@/utils/tournament"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin, Star } from "lucide-react"
@@ -16,8 +16,7 @@ interface TournamentCardProps {
 }
 
 export default function TournamentCard({ tournament, isFavorite, onToggleFavorite }: TournamentCardProps) {
-  // Corrected to export default
-  const [showAuthPrompt, setShowAuthPrompt] = useState(false)
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false) // This state is not used in this component, but kept for consistency with previous versions.
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

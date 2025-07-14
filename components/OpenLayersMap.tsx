@@ -15,7 +15,7 @@ import Overlay from "ol/Overlay"
 import { defaults as defaultInteractions, MouseWheelZoom } from "ol/interaction"
 import { platformModifierKeyOnly } from "ol/events/condition"
 import type { Tournament, DisciplineDetail } from "@/types/tournament"
-import { getTournamentTypeColor } from "@/services/tournament-api"
+import { getTournamentTypeColor } from "@/utils/tournament" // Updated import path
 
 interface OpenLayersMapProps {
   tournaments: Tournament[]
@@ -184,51 +184,51 @@ export function OpenLayersMap({ tournaments, initialZoom = 2, initialCenter }: O
       <div ref={mapRef} className="h-full w-full rounded-lg z-0"></div>
       <div ref={popupRef} className="ol-popup absolute bottom-0 left-1/2 -translate-x-1/2 mb-2"></div>
       <style jsx>{`
-      .ol-popup {
-        position: absolute;
-        background-color: white;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid #cccccc;
-        transform: translateX(-50%); /* Center the popup horizontally relative to its anchor point */
-        bottom: 12px; /* Adjusted slightly for better visual */
-        min-width: 280px;
-      }
-      .ol-popup:after, .ol-popup:before {
-        top: 100%;
-        border: solid transparent;
-        content: " ";
-        height: 0;
-        width: 0;
-        position: absolute;
-        pointer-events: none;
-        left: 50%; /* Center the arrow relative to the popup's width */
-        transform: translateX(-50%); /* Further center the arrow */
-      }
-      .ol-popup:after {
-        border-top-color: white;
-        border-width: 10px;
-        margin-left: 0; /* Reset margin-left */
-      }
-      .ol-popup:before {
-        border-top-color: #cccccc;
-        border-width: 11px;
-        margin-left: 0; /* Reset margin-left */
-      }
-      .ol-popup-closer {
-        text-decoration: none;
-        position: absolute;
-        top: 2px;
-        right: 8px;
-        color: #333; /* Make sure it's visible */
-        font-weight: bold;
-        font-size: 1.2em;
-      }
-      .ol-popup-closer:after {
-        content: "✖";
-      }
-    `}</style>
+        .ol-popup {
+          position: absolute;
+          background-color: white;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+          padding: 15px;
+          border-radius: 10px;
+          border: 1px solid #cccccc;
+          transform: translateX(-50%); /* Center the popup horizontally relative to its anchor point */
+          bottom: 12px; /* Adjusted slightly for better visual */
+          min-width: 280px;
+        }
+        .ol-popup:after, .ol-popup:before {
+          top: 100%;
+          border: solid transparent;
+          content: " ";
+          height: 0;
+          width: 0;
+          position: absolute;
+          pointer-events: none;
+          left: 50%; /* Center the arrow relative to the popup's width */
+          transform: translateX(-50%); /* Further center the arrow */
+        }
+        .ol-popup:after {
+          border-top-color: white;
+          border-width: 10px;
+          margin-left: 0; /* Reset margin-left */
+        }
+        .ol-popup:before {
+          border-top-color: #cccccc;
+          border-width: 11px;
+          margin-left: 0; /* Reset margin-left */
+        }
+        .ol-popup-closer {
+          text-decoration: none;
+          position: absolute;
+          top: 2px;
+          right: 8px;
+          color: #333; /* Make sure it's visible */
+          font-weight: bold;
+          font-size: 1.2em;
+        }
+        .ol-popup-closer:after {
+          content: "✖";
+        }
+      `}</style>
     </div>
   )
 }

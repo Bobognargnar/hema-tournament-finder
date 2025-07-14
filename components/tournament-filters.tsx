@@ -1,7 +1,7 @@
 "use client"
 
 import type { TournamentFilters, TournamentType } from "@/types/tournament"
-import { getTournamentTypeColor } from "@/services/tournament-api" // Import the color helper
+import { getTournamentTypeColor } from "@/utils/tournament" // Import the color helper
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

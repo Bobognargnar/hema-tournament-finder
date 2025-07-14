@@ -1,5 +1,5 @@
 "use client"
-import { fetchTournaments } from "@/services/tournament-api"
+import { fetchTournaments } from "@/api/tournaments" // Updated import path
 import { TournamentFinderClient } from "@/components/tournament-finder-client"
 
 interface UserData {

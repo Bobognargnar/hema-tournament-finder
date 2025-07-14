@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import type { Tournament, TournamentFilters, LoginForm, DisciplineDetail } from "@/types/tournament"
-import TournamentCard from "@/components/tournament-card" // Corrected to default import
-import { OpenLayersMap } from "@/components/openlayers-map"
+import type { Tournament, DisciplineDetail } from "@/types/tournament"
+import { disciplineOptions, tournamentTypeOptions } from "@/utils/tournament" // Updated import path
+import { TournamentFiltersComponent } from "@/components/tournament-filters"
+import TournamentCard from "@/components/tournament-card"
+import { OpenLayersMap } from "@/components/OpenLayersMap" // Updated import path and casing
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,14 +39,14 @@ export function TournamentFinderClient({
   const [tournaments, setTournaments] = useState<Tournament[]>(initialTournaments)
   const [loading, setLoading] = useState(false)
   const [loginLoading, setLoginLoading] = useState(false)
-  const [filters, setFilters] = useState<TournamentFilters>({
+  const [filters, setFilters] = useState({
     startDate: "",
     endDate: "",
     disciplines: [],
     selectedTypes: [],
     showFavorites: false,
   })
-  const [loginForm, setLoginForm] = useState<LoginForm>({
+  const [loginForm, setLoginForm] = useState({
     email: "",
     password: "",
   })
@@ -267,7 +269,7 @@ export function TournamentFinderClient({
     }
   }
 
-  const handleFiltersChange = (newFilters: TournamentFilters) => {
+  const handleFiltersChange = (newFilters: any) => {
     if (newFilters.showFavorites && !isLoggedIn) {
       setShowAuthPromptDialog(true)
       setFilters((prevFilters) => ({ ...newFilters, showFavorites: prevFilters.showFavorites }))
@@ -304,11 +306,7 @@ export function TournamentFinderClient({
               ) : (
                 <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
                   <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="flex items-center gap-2"
-                      onClick={() => setShowLoginDialog(true)}
-                    >
+                    <Button variant="ghost" className="flex items-center gap-2">
                       <LogIn className="w-4 h-4" />
                       Login
                     </Button>
@@ -396,14 +394,12 @@ export function TournamentFinderClient({
                 <div className="flex flex-col lg:flex-row gap-6">
                   {/* Filters Component */}
                   <div className="lg:w-1/3">
-                    {/* TournamentFilters component is imported but not used here */}
-                    {/* You can use it by uncommenting the line below */}
-                    {/* <TournamentFilters
+                    <TournamentFiltersComponent
                       filters={filters}
                       onFiltersChange={handleFiltersChange}
                       disciplineOptions={disciplineOptions}
                       tournamentTypeOptions={tournamentTypeOptions}
-                    /> */}
+                    />
                   </div>
 
                   {/* OpenLayers Map */}
