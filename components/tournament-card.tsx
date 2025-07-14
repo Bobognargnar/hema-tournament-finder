@@ -15,8 +15,7 @@ interface TournamentCardProps {
   onToggleFavorite: (tournamentId: number) => void
 }
 
-export default function TournamentCard({ tournament, isFavorite, onToggleFavorite }: TournamentCardProps) {
-  // Corrected to export default
+export function TournamentCard({ tournament, isFavorite, onToggleFavorite }: TournamentCardProps) {
   const [showAuthPrompt, setShowAuthPrompt] = useState(false)
 
   const formatDate = (dateString: string) => {

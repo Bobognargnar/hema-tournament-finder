@@ -39,10 +39,6 @@ export async function POST(request: Request) {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 300))
 
-  console.log(
-    `API Call: User ${userId} performed action '${action}' on tournament ${tournamentId}. New favorites: ${currentFavorites.join(", ")}`,
-  ) // Log the action
-
   return NextResponse.json(
     {
       success: true,

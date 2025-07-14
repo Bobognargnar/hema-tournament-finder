@@ -2,7 +2,9 @@
 
 import { useState, useMemo, useEffect } from "react"
 import type { Tournament, TournamentFilters, LoginForm, DisciplineDetail } from "@/types/tournament"
-import TournamentCard from "@/components/tournament-card" // Corrected to default import
+import { disciplineOptions, tournamentTypeOptions } from "@/services/tournament-api"
+import { TournamentCard } from "@/components/tournament-card"
+import { TournamentFilters as FiltersComponent } from "@/components/tournament-filters"
 import { OpenLayersMap } from "@/components/openlayers-map"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -396,14 +398,12 @@ export function TournamentFinderClient({
                 <div className="flex flex-col lg:flex-row gap-6">
                   {/* Filters Component */}
                   <div className="lg:w-1/3">
-                    {/* TournamentFilters component is imported but not used here */}
-                    {/* You can use it by uncommenting the line below */}
-                    {/* <TournamentFilters
+                    <FiltersComponent
                       filters={filters}
                       onFiltersChange={handleFiltersChange}
                       disciplineOptions={disciplineOptions}
                       tournamentTypeOptions={tournamentTypeOptions}
-                    /> */}
+                    />
                   </div>
 
                   {/* OpenLayers Map */}
