@@ -17,7 +17,8 @@ interface TournamentFiltersProps {
   tournamentTypeOptions: TournamentType[]
 }
 
-function TournamentFiltersComponent({
+export function TournamentFiltersComponent({
+  // Renamed to TournamentFiltersComponent
   filters,
   onFiltersChange,
   disciplineOptions,
@@ -191,5 +192,3 @@ function TournamentFiltersComponent({
     </div>
   )
 }
-
-export const TournamentFilters = TournamentFiltersComponent
