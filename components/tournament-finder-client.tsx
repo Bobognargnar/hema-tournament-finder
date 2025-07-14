@@ -36,6 +36,10 @@ export function TournamentFinderClient({
   initialMapCenter,
   initialMapZoom,
 }: TournamentFinderClientProps) {
+  console.log("TournamentFinderClient: Component rendered.")
+  console.log("TournamentFinderClient: Received initialTournaments count:", initialTournaments.length)
+  console.log("TournamentFinderClient: Received initialMapCenter:", initialMapCenter, "initialMapZoom:", initialMapZoom)
+
   const [tournaments, setTournaments] = useState<Tournament[]>(initialTournaments)
   const [loading, setLoading] = useState(false)
   const [loginLoading, setLoginLoading] = useState(false)
@@ -58,19 +62,24 @@ export function TournamentFinderClient({
 
   // Check for existing auth token on mount
   useEffect(() => {
+    console.log("TournamentFinderClient: useEffect for auth token check triggered.")
     if (typeof window !== "undefined") {
       const storedToken = localStorage.getItem("authToken")
       if (storedToken) {
         setAuthToken(storedToken)
         setIsLoggedIn(true)
+        console.log("TournamentFinderClient: Found stored auth token.")
         // Fetch user data with the stored token
         fetchUserDataWithToken(storedToken)
+      } else {
+        console.log("TournamentFinderClient: No stored auth token found.")
       }
     }
   }, [])
 
   // Filter tournaments based on current filters
   const filteredTournaments = useMemo(() => {
+    console.log("TournamentFinderClient: Recalculating filteredTournaments.")
     let filtered = tournaments
 
     const filterStartDate = filters.startDate ? new Date(filters.startDate) : null
@@ -81,6 +90,7 @@ export function TournamentFinderClient({
         const tournamentDate = new Date(t.date)
         return tournamentDate.getTime() >= filterStartDate.getTime()
       })
+      console.log("TournamentFinderClient: Filtered by start date. Count:", filtered.length)
     }
 
     if (filterEndDate) {
@@ -88,29 +98,34 @@ export function TournamentFinderClient({
         const tournamentDate = new Date(t.date)
         return tournamentDate.getTime() <= filterEndDate.getTime()
       })
+      console.log("TournamentFinderClient: Filtered by end date. Count:", filtered.length)
     }
 
     if (filters.disciplines.length > 0) {
       filtered = filtered.filter((t) =>
         t.disciplines.some((d: DisciplineDetail) => filters.disciplines.includes(d.name)),
       )
+      console.log("TournamentFinderClient: Filtered by disciplines. Count:", filtered.length)
     }
 
     if (filters.selectedTypes.length > 0) {
       filtered = filtered.filter((t) =>
         t.disciplines.some((d: DisciplineDetail) => filters.selectedTypes.includes(d.type)),
       )
+      console.log("TournamentFinderClient: Filtered by types. Count:", filtered.length)
     }
 
     // Apply new favorite filter
     if (filters.showFavorites && userData) {
       filtered = filtered.filter((t) => userData.favouriteTournamentIds.includes(t.id))
+      console.log("TournamentFinderClient: Filtered by favorites. Count:", filtered.length)
     }
-
+    console.log("TournamentFinderClient: Final filteredTournaments count:", filtered.length)
     return filtered
   }, [tournaments, filters, userData])
 
   const fetchUserDataWithToken = async (token: string) => {
+    console.log("TournamentFinderClient: Attempting to fetch user data with token.")
     try {
       const response = await fetch("/api/user/favorites", {
         method: "GET",
@@ -122,28 +137,31 @@ export function TournamentFinderClient({
       const data = await response.json()
       if (data.success) {
         setUserData(data.user)
-        console.log("User data fetched:", data.user)
+        console.log("TournamentFinderClient: User data fetched successfully:", data.user)
       } else {
-        console.error("Failed to fetch user data:", data.message)
+        console.error("TournamentFinderClient: Failed to fetch user data:", data.message)
         handleLogout()
       }
     } catch (error) {
-      console.error("Error fetching user data:", error)
+      console.error("TournamentFinderClient: Error fetching user data:", error)
       handleLogout()
     }
   }
 
   const fetchUserData = async () => {
+    console.log("TournamentFinderClient: fetchUserData called.")
     if (!authToken) {
-      console.warn("No auth token available to fetch user data.")
+      console.warn("TournamentFinderClient: No auth token available to fetch user data.")
       return
     }
     await fetchUserDataWithToken(authToken)
   }
 
   const handleLogin = async () => {
+    console.log("TournamentFinderClient: handleLogin called.")
     if (!loginForm.email || !loginForm.password) {
       alert("Please enter both email and password.")
+      console.log("TournamentFinderClient: Login failed - missing email or password.")
       return
     }
 
@@ -164,65 +182,65 @@ export function TournamentFinderClient({
         setAuthToken(token)
         setIsLoggedIn(true)
 
-        // Store token in localStorage for persistence
         if (typeof window !== "undefined") {
           localStorage.setItem("authToken", token)
+          console.log("TournamentFinderClient: Auth token stored in localStorage.")
         }
 
-        console.log("Login successful! Token:", token)
+        console.log("TournamentFinderClient: Login successful! Token:", token)
         setShowLoginDialog(false)
-
-        // Clear login form
         setLoginForm({ email: "", password: "" })
-
-        // Fetch user data immediately after setting the token
         await fetchUserDataWithToken(token)
       } else {
-        console.error("Login failed:", data.message)
+        console.error("TournamentFinderClient: Login failed:", data.message)
         alert(`Login failed: ${data.message}`)
       }
     } catch (error) {
-      console.error("Error during login:", error)
+      console.error("TournamentFinderClient: Error during login:", error)
       alert("An error occurred during login.")
     } finally {
       setLoginLoading(false)
+      console.log("TournamentFinderClient: Login attempt finished.")
     }
   }
 
   const handleLogout = () => {
+    console.log("TournamentFinderClient: handleLogout called.")
     setAuthToken(null)
     setIsLoggedIn(false)
     setUserData(null)
     setFilters((prevFilters) => ({ ...prevFilters, showFavorites: false }))
 
-    // Remove token from localStorage
     if (typeof window !== "undefined") {
       localStorage.removeItem("authToken")
+      console.log("TournamentFinderClient: Auth token removed from localStorage.")
     }
 
-    console.log("Logged out.")
+    console.log("TournamentFinderClient: Logged out.")
   }
 
   const handleToggleFavorite = async (tournamentId: number) => {
+    console.log("TournamentFinderClient: handleToggleFavorite called for tournamentId:", tournamentId)
     if (!isLoggedIn || !userData) {
       setShowAuthPromptDialog(true)
+      console.log("TournamentFinderClient: Not logged in, showing auth prompt for favorite toggle.")
       return
     }
 
     const isCurrentlyFavorite = userData.favouriteTournamentIds.includes(tournamentId)
     const action = isCurrentlyFavorite ? "remove" : "add"
 
-    // Optimistic UI update
     setUserData((prevUserData) => {
       if (!prevUserData) return null
       const currentFavorites = prevUserData.favouriteTournamentIds
       const newFavorites = isCurrentlyFavorite
         ? currentFavorites.filter((id) => id !== tournamentId)
         : [...currentFavorites, tournamentId]
+      console.log("TournamentFinderClient: Optimistic UI update for favorites. New favorites:", newFavorites)
       return { ...prevUserData, favouriteTournamentIds: newFavorites }
     })
 
-    console.log(`Attempting to ${action} tournament ${tournamentId} from favorites via API.`)
+    console.log(`TournamentFinderClient: Attempting to ${action} tournament ${tournamentId} from favorites via API.`)
 
     try {
       const response = await fetch("/api/user/favorites", {
@@ -237,44 +255,53 @@ export function TournamentFinderClient({
       const data = await response.json()
 
       if (data.success) {
-        console.log(data.message)
+        console.log("TournamentFinderClient: API update favorites successful:", data.message)
         setUserData((prevUserData) =>
           prevUserData ? { ...prevUserData, favouriteTournamentIds: data.favouriteTournamentIds } : null,
         )
       } else {
-        console.error("Failed to update favorites:", data.message)
+        console.error("TournamentFinderClient: Failed to update favorites via API:", data.message)
         alert(`Failed to update favorites: ${data.message}`)
-        // Revert optimistic update on failure
         setUserData((prevUserData) => {
           if (!prevUserData) return null
           const currentFavorites = prevUserData.favouriteTournamentIds
           const revertedFavorites = isCurrentlyFavorite
             ? [...currentFavorites, tournamentId]
             : currentFavorites.filter((id) => id !== tournamentId)
+          console.log(
+            "TournamentFinderClient: Reverting optimistic update on API failure. Reverted favorites:",
+            revertedFavorites,
+          )
           return { ...prevUserData, favouriteTournamentIds: revertedFavorites }
         })
       }
     } catch (error) {
-      console.error("Error updating favorites:", error)
+      console.error("TournamentFinderClient: Error updating favorites via API:", error)
       alert("An error occurred while updating favorites.")
-      // Revert optimistic update on network error
       setUserData((prevUserData) => {
         if (!prevUserData) return null
         const currentFavorites = prevUserData.favouriteTournamentIds
         const revertedFavorites = isCurrentlyFavorite
           ? [...currentFavorites, tournamentId]
           : currentFavorites.filter((id) => id !== tournamentId)
+        console.log(
+          "TournamentFinderClient: Reverting optimistic update on network error. Reverted favorites:",
+          revertedFavorites,
+        )
         return { ...prevUserData, favouriteTournamentIds: revertedFavorites }
       })
     }
   }
 
   const handleFiltersChange = (newFilters: any) => {
+    console.log("TournamentFinderClient: handleFiltersChange called with new filters:", newFilters)
     if (newFilters.showFavorites && !isLoggedIn) {
       setShowAuthPromptDialog(true)
       setFilters((prevFilters) => ({ ...newFilters, showFavorites: prevFilters.showFavorites }))
+      console.log("TournamentFinderClient: Attempted to show favorites without login, showing auth prompt.")
     } else {
       setFilters(newFilters)
+      console.log("TournamentFinderClient: Filters updated.")
     }
   }
 
@@ -409,6 +436,10 @@ export function TournamentFinderClient({
                       initialCenter={initialMapCenter}
                       initialZoom={initialMapZoom}
                     />
+                    {console.log(
+                      "TournamentFinderClient: OpenLayersMap component rendered with filteredTournaments count:",
+                      filteredTournaments.length,
+                    )}
                   </div>
                 </div>
               </CardContent>
