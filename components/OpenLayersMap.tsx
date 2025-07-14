@@ -15,7 +15,7 @@ import Overlay from "ol/Overlay"
 import { defaults as defaultInteractions, MouseWheelZoom } from "ol/interaction"
 import { platformModifierKeyOnly } from "ol/events/condition"
 import type { Tournament, DisciplineDetail } from "@/types/tournament"
-import { getTournamentTypeColor } from "@/utils/tournament" // Updated import path
+import { getTournamentTypeColor } from "@/utils/tournament" // Corrected import path
 
 interface OpenLayersMapProps {
   tournaments: Tournament[]

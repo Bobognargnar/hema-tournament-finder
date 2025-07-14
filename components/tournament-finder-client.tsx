@@ -394,7 +394,7 @@ export function TournamentFinderClient({
                 <div className="flex flex-col lg:flex-row gap-6">
                   {/* Filters Component */}
                   <div className="lg:w-1/3">
-                    <TournamentFiltersComponent // Uncommented and used here
+                    <TournamentFiltersComponent
                       filters={filters}
                       onFiltersChange={handleFiltersChange}
                       disciplineOptions={disciplineOptions}

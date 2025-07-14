@@ -1,7 +1,7 @@
 "use client"
 
 import type { TournamentFilters, TournamentType } from "@/types/tournament"
-import { getTournamentTypeColor } from "@/utils/tournament" // Import the color helper
+import { getTournamentTypeColor } from "@/utils/tournament" // Corrected import path
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,7 +18,6 @@ interface TournamentFiltersProps {
 }
 
 export function TournamentFiltersComponent({
-  // Renamed to TournamentFiltersComponent
   filters,
   onFiltersChange,
   disciplineOptions,
