@@ -2,10 +2,10 @@
 
 import { useState, useMemo, useEffect } from "react"
 import type { Tournament, DisciplineDetail } from "@/types/tournament"
-import { disciplineOptions, tournamentTypeOptions } from "@/utils/tournament" // Updated import path
+import { disciplineOptions, tournamentTypeOptions } from "@/utils/tournament"
 import { TournamentFiltersComponent } from "@/components/tournament-filters"
 import TournamentCard from "@/components/tournament-card"
-import { OpenLayersMap } from "@/components/OpenLayersMap" // Updated import path and casing
+import { OpenLayersMap } from "@/components/OpenLayersMap"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -394,7 +394,7 @@ export function TournamentFinderClient({
                 <div className="flex flex-col lg:flex-row gap-6">
                   {/* Filters Component */}
                   <div className="lg:w-1/3">
-                    <TournamentFiltersComponent
+                    <TournamentFiltersComponent // Uncommented and used here
                       filters={filters}
                       onFiltersChange={handleFiltersChange}
                       disciplineOptions={disciplineOptions}
