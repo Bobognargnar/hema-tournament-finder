@@ -501,6 +501,17 @@ export function TournamentFinderClient({
                         </div>
 
                         <div>
+                          <Label htmlFor="tournament-date">Date</Label>
+                          <Input
+                            id="tournament-date"
+                            type="date"
+                            value={tournamentForm.date}
+                            onChange={(e) => setTournamentForm({ ...tournamentForm, date: e.target.value })}
+                            disabled={submitLoading}
+                          />
+                        </div>
+
+                        <div>
                           <Label>Disciplines</Label>
                           <div className="space-y-2 mt-2">
                             {tournamentForm.disciplines.map((row, idx) => (
