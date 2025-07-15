@@ -427,7 +427,7 @@ export function TournamentFinderClient({
                   </div>
 
                   {/* OpenLayers Map */}
-                  <div className="lg:w-2/3 h-[400px]">
+                  <div className="lg:w-2/3">
                     <OpenLayersMap
                       tournaments={filteredTournaments}
                       initialCenter={initialMapCenter}
