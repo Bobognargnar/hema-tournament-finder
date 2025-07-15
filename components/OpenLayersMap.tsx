@@ -1,185 +1,276 @@
 "use client"
 
-import { useEffect, useRef } from "react"
-import type { Tournament } from "@/types/tournament"
+import { useRef, useEffect } from "react"
 import Map from "ol/Map"
 import View from "ol/View"
 import TileLayer from "ol/layer/Tile"
-import VectorLayer from "ol/layer/Vector"
-import VectorSource from "ol/source/Vector"
 import OSM from "ol/source/OSM"
 import Feature from "ol/Feature"
 import Point from "ol/geom/Point"
-import { Style, Icon } from "ol/style"
 import { fromLonLat } from "ol/proj"
+import { Style, Icon } from "ol/style"
+import VectorLayer from "ol/layer/Vector"
+import VectorSource from "ol/source/Vector"
 import Overlay from "ol/Overlay"
+import { defaults as defaultInteractions, MouseWheelZoom } from "ol/interaction"
+import { platformModifierKeyOnly } from "ol/events/condition"
+import type { Tournament, DisciplineDetail } from "@/types/tournament"
+import { getTournamentTypeColor } from "@/utils/tournament"
 
 interface OpenLayersMapProps {
   tournaments: Tournament[]
-  initialCenter?: [number, number]
   initialZoom?: number
+  initialCenter?: [number, number] // [longitude, latitude]
 }
 
-export function OpenLayersMap({
-  tournaments,
-  initialCenter = [10.0, 54.0], // Default to center of Europe
-  initialZoom = 4,
-}: OpenLayersMapProps) {
+export function OpenLayersMap({ tournaments, initialZoom = 2, initialCenter }: OpenLayersMapProps) {
   const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<Map | null>(null)
   const popupRef = useRef<HTMLDivElement>(null)
-  const overlayRef = useRef<Overlay | null>(null)
+  const mapInstance = useRef<Map | null>(null)
+  const vectorSource = useRef<VectorSource | null>(null)
+  const popupOverlay = useRef<Overlay | null>(null)
 
-  console.log("OpenLayersMap: Component rendered with tournaments:", tournaments.length)
-  console.log("OpenLayersMap: Initial center:", initialCenter, "Initial zoom:", initialZoom)
+  console.log("OpenLayersMap: Component rendered.")
+  console.log(
+    "OpenLayersMap: Received tournaments:",
+    tournaments.length,
+    "initialZoom:",
+    initialZoom,
+    "initialCenter:",
+    initialCenter,
+  )
 
+  // Effect for map initialization (runs once on mount)
   useEffect(() => {
-    console.log("OpenLayersMap: useEffect triggered for map initialization")
-
+    console.log("OpenLayersMap: useEffect for map initialization triggered.")
     if (!mapRef.current) {
-      console.error("OpenLayersMap: Map container ref not available")
+      console.log("OpenLayersMap: Map container ref is null, cannot initialize map.")
       return
     }
-
-    // Clean up existing map
-    if (mapInstanceRef.current) {
-      console.log("OpenLayersMap: Cleaning up existing map instance")
-      mapInstanceRef.current.setTarget(undefined)
-      mapInstanceRef.current = null
+    if (mapInstance.current) {
+      console.log("OpenLayersMap: Map already initialized, skipping.")
+      return // Prevent re-initialization
     }
 
-    try {
-      console.log("OpenLayersMap: Creating new map instance")
+    // Determine initial center and zoom based on provided props
+    let center = fromLonLat([0, 40]) // Default global center
+    let zoom = initialZoom
 
-      // Create popup overlay
-      if (popupRef.current) {
-        overlayRef.current = new Overlay({
-          element: popupRef.current,
-          autoPan: {
-            animation: {
-              duration: 250,
-            },
-          },
-        })
+    if (initialCenter) {
+      center = fromLonLat(initialCenter)
+      zoom = Math.max(initialZoom, 4) // A reasonable zoom for a country
+      console.log("OpenLayersMap: Using initialCenter prop:", initialCenter, "and zoom:", zoom)
+    } else if (tournaments && tournaments.length > 0) {
+      center = fromLonLat(tournaments[0].coordinates)
+      zoom = Math.max(initialZoom, 8) // Zoom in more if a specific tournament is provided
+      console.log(
+        "OpenLayersMap: Using first tournament coordinates as center:",
+        tournaments[0].coordinates,
+        "and zoom:",
+        zoom,
+      )
+    } else {
+      console.log("OpenLayersMap: No initialCenter or tournaments, using default global center.")
+    }
+
+    // Create default interactions, explicitly disabling regular mouse wheel zoom
+    const interactions = defaultInteractions({ mouseWheelZoom: false }).extend([
+      // Add a new MouseWheelZoom interaction that requires the Ctrl key
+      new MouseWheelZoom({
+        condition: platformModifierKeyOnly, // Requires Ctrl (or Cmd on Mac)
+      }),
+    ])
+
+    const initialMap = new Map({
+      target: mapRef.current,
+      layers: [
+        new TileLayer({
+          source: new OSM(),
+        }),
+      ],
+      view: new View({
+        center: center,
+        zoom: zoom,
+      }),
+      interactions: interactions, // Apply custom interactions
+    })
+    mapInstance.current = initialMap
+    console.log("OpenLayersMap: Map instance created and targeted.")
+
+    // Initialize vector source for markers
+    const initialVectorSource = new VectorSource()
+    const vectorLayer = new VectorLayer({
+      source: initialVectorSource,
+    })
+    initialMap.addLayer(vectorLayer)
+    vectorSource.current = initialVectorSource
+    console.log("OpenLayersMap: Vector layer and source initialized.")
+
+    // Initialize popup overlay
+    if (popupRef.current) {
+      const initialPopupOverlay = new Overlay({
+        element: popupRef.current,
+        autoPan: false,
+        positioning: "bottom-center",
+        offset: [0, -15],
+      })
+      initialMap.addOverlay(initialPopupOverlay)
+      popupOverlay.current = initialPopupOverlay
+      console.log("OpenLayersMap: Popup overlay initialized.")
+
+      // Add event listener for the close button
+      const closer = popupRef.current.querySelector(".ol-popup-closer")
+      if (closer) {
+        closer.onclick = () => {
+          initialPopupOverlay.setPosition(undefined)
+          closer.blur()
+          console.log("OpenLayersMap: Popup closed.")
+          return false
+        }
       }
+    }
 
-      // Create vector source for tournament markers
-      const vectorSource = new VectorSource()
+    // Handle map clicks for popups and centering
+    initialMap.on("click", (event) => {
+      console.log("OpenLayersMap: Map clicked at pixel:", event.pixel)
+      const feature = initialMap.forEachFeatureAtPixel(event.pixel, (feature) => feature)
+      if (feature && feature.get("tournament")) {
+        const tournament = feature.get("tournament") as Tournament
+        const coordinates = feature.getGeometry()?.getCoordinates()
+        console.log("OpenLayersMap: Clicked on tournament feature:", tournament.name, "at coordinates:", coordinates)
 
-      // Add tournament features
-      tournaments.forEach((tournament) => {
-        if (tournament.coordinates && tournament.coordinates.length === 2) {
-          console.log(`OpenLayersMap: Adding marker for ${tournament.name} at`, tournament.coordinates)
-
-          const feature = new Feature({
-            geometry: new Point(fromLonLat(tournament.coordinates)),
-            tournament: tournament,
+        if (coordinates) {
+          // Center map on the clicked feature
+          initialMap.getView().animate({
+            center: coordinates,
+            duration: 250,
+            zoom: Math.max(initialMap.getView().getZoom() || 2, 5),
           })
 
-          feature.setStyle(
-            new Style({
-              image: new Icon({
-                anchor: [0.5, 1],
-                src:
-                  "data:image/svg+xml;charset=utf-8," +
-                  encodeURIComponent(`
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#3B82F6"/>
-                    <circle cx="12" cy="9" r="2.5" fill="white"/>
-                  </svg>
-                `),
-                scale: 1,
-              }),
-            }),
-          )
-
-          vectorSource.addFeature(feature)
-        } else {
-          console.warn(`OpenLayersMap: Invalid coordinates for tournament ${tournament.name}:`, tournament.coordinates)
-        }
-      })
-
-      // Create vector layer
-      const vectorLayer = new VectorLayer({
-        source: vectorSource,
-      })
-
-      // Create map
-      const map = new Map({
-        target: mapRef.current,
-        layers: [
-          new TileLayer({
-            source: new OSM(),
-          }),
-          vectorLayer,
-        ],
-        view: new View({
-          center: fromLonLat(initialCenter),
-          zoom: initialZoom,
-        }),
-      })
-
-      // Add overlay if it exists
-      if (overlayRef.current) {
-        map.addOverlay(overlayRef.current)
-      }
-
-      // Add click handler for popups
-      map.on("singleclick", (evt) => {
-        const feature = map.forEachFeatureAtPixel(evt.pixel, (feature) => feature)
-
-        if (feature && popupRef.current && overlayRef.current) {
-          const tournament = feature.get("tournament") as Tournament
-          const coordinates = feature.getGeometry()?.getCoordinates()
-
-          if (tournament && coordinates) {
-            console.log("OpenLayersMap: Showing popup for tournament:", tournament.name)
-
+          // Show popup
+          if (popupRef.current && popupOverlay.current) {
             popupRef.current.innerHTML = `
-              <div class="bg-white p-3 rounded-lg shadow-lg border max-w-xs">
-                <h3 class="font-semibold text-sm mb-1">${tournament.name}</h3>
-                <p class="text-xs text-gray-600 mb-1">${tournament.location}</p>
-                <p class="text-xs text-gray-600 mb-2">${new Date(tournament.date).toLocaleDateString()}</p>
-                <div class="flex flex-wrap gap-1">
-                  ${tournament.disciplines.map((d) => `<span class="text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded">${d.name}</span>`).join("")}
+            <a href="#" class="ol-popup-closer"></a>
+            <a href="/tournaments/${tournament.id}" class="block no-underline text-current">
+              <div class="bg-white p-2 rounded shadow-md text-sm">
+                <div class="font-semibold text-blue-600 hover:underline">${tournament.name}</div>
+                <div>${tournament.location}</div>
+                <div>${new Date(tournament.date).toLocaleDateString()}</div>
+                <div class="flex flex-wrap gap-1 mt-1">
+                  ${tournament.disciplines.map((d: DisciplineDetail) => `<span class="text-xs px-1.5 py-0.5 rounded-full ${getTournamentTypeColor(d.type)}">${d.name} (${d.type})</span>`).join("")}
                 </div>
               </div>
-            `
-
-            overlayRef.current.setPosition(coordinates)
-          }
-        } else {
-          // Hide popup if clicking elsewhere
-          if (overlayRef.current) {
-            overlayRef.current.setPosition(undefined)
+            </a>
+          `
+            const closer = popupRef.current.querySelector(".ol-popup-closer")
+            if (closer) {
+              closer.onclick = () => {
+                popupOverlay.current?.setPosition(undefined)
+                closer.blur()
+                console.log("OpenLayersMap: Popup closed via closer button.")
+                return false
+              }
+            }
+            popupOverlay.current.setPosition(coordinates)
+            console.log("OpenLayersMap: Popup displayed for tournament:", tournament.name)
           }
         }
-      })
+      } else {
+        popupOverlay.current?.setPosition(undefined) // Hide popup if no feature clicked
+        console.log("OpenLayersMap: Clicked on map, no feature found. Hiding popup.")
+      }
+    })
 
-      mapInstanceRef.current = map
-      console.log("OpenLayersMap: Map instance created successfully")
-    } catch (error) {
-      console.error("OpenLayersMap: Error creating map:", error)
-    }
-
-    // Cleanup function
+    // Cleanup on unmount
     return () => {
-      console.log("OpenLayersMap: Cleaning up map on unmount")
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.setTarget(undefined)
-        mapInstanceRef.current = null
+      console.log("OpenLayersMap: Cleanup function triggered.")
+      if (mapInstance.current) {
+        mapInstance.current.setTarget(undefined)
+        mapInstance.current = null
+        console.log("OpenLayersMap: Map instance detached and nulled.")
       }
     }
-  }, [tournaments, initialCenter, initialZoom])
+  }, [tournaments, initialZoom, initialCenter]) // Dependencies for map initialization
+
+  // Effect for updating markers when tournaments prop changes
+  useEffect(() => {
+    console.log("OpenLayersMap: useEffect for updating markers triggered. Tournaments count:", tournaments.length)
+    if (vectorSource.current) {
+      vectorSource.current.clear()
+      console.log("OpenLayersMap: Vector source cleared.")
+      tournaments.forEach((tournament) => {
+        const marker = new Feature({
+          geometry: new Point(fromLonLat(tournament.coordinates)),
+        })
+        marker.setStyle(
+          new Style({
+            image: new Icon({
+              anchor: [0.5, 1], // Anchor at the bottom center of the icon
+              src: "https://openlayers.org/en/latest/examples/data/icon.png", // Default OpenLayers marker icon
+              scale: 0.7,
+            }),
+          }),
+        )
+        marker.set("tournament", tournament) // Store tournament data on the feature
+        vectorSource.current.addFeature(marker)
+        console.log("OpenLayersMap: Added marker for tournament:", tournament.name)
+      })
+      console.log("OpenLayersMap: All markers updated.")
+    } else {
+      console.log("OpenLayersMap: Vector source not available, cannot update markers.")
+    }
+  }, [tournaments]) // Dependency on tournaments array
 
   return (
-    <div className="relative w-full h-full">
-      <div
-        ref={mapRef}
-        className="w-full h-full min-h-[400px] rounded-lg overflow-hidden"
-        style={{ background: "#f0f0f0" }}
-      />
-      <div ref={popupRef} className="absolute pointer-events-none" />
+    <div className="relative h-full">
+      <div ref={mapRef} className="h-full w-full rounded-lg z-0"></div>
+      <div ref={popupRef} className="ol-popup absolute bottom-0 left-1/2 -translate-x-1/2 mb-2"></div>
+      <style jsx>{`
+        .ol-popup {
+          position: absolute;
+          background-color: white;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+          padding: 15px;
+          border-radius: 10px;
+          border: 1px solid #cccccc;
+          transform: translateX(-50%); /* Center the popup horizontally relative to its anchor point */
+          bottom: 12px; /* Adjusted slightly for better visual */
+          min-width: 280px;
+        }
+        .ol-popup:after, .ol-popup:before {
+          top: 100%;
+          border: solid transparent;
+          content: " ";
+          height: 0;
+          width: 0;
+          position: absolute;
+          pointer-events: none;
+          left: 50%; /* Center the arrow relative to the popup's width */
+          transform: translateX(-50%); /* Further center the arrow */
+        }
+        .ol-popup:after {
+          border-top-color: white;
+          border-width: 10px;
+          margin-left: 0; /* Reset margin-left */
+        }
+        .ol-popup:before {
+          border-top-color: #cccccc;
+          border-width: 11px;
+          margin-left: 0; /* Reset margin-left */
+        }
+        .ol-popup-closer {
+          text-decoration: none;
+          position: absolute;
+          top: 2px;
+          right: 8px;
+          color: #333; /* Make sure it's visible */
+          font-weight: bold;
+          font-size: 1.2em;
+        }
+        .ol-popup-closer:after {
+          content: "✖";
+        }
+      `}</style>
     </div>
   )
 }
