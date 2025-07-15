@@ -1,22 +1,34 @@
+import { Tournament } from "@/types/tournament"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
-  // In a real application, you would validate credentials against a database
-  // and generate a real JWT. For this mock, any credentials work.
   const { email, password } = await request.json()
 
-  console.log("Login attempt received:", { email, password })
-
   if (email && password) {
-    // Simulate a successful login and return a dummy JWT token
-    const dummyToken =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6Ik1vY2sgVXNlciIsImlhdCI6MTUxNjIzOTAyMiwiZW1haWwiOiJ" +
-      email +
-      "J9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+    try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL
+        const response = await fetch(`${baseUrl}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': process.env.NEXT_PUBLIC_API_KEY || '',
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password,
+          }),
+        })
+    
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status} ${response.statusText}`)
+        }
+        const data = await response.json()
+        return NextResponse.json({ success: true, token: data.access_token,identity: data.user.email, message: "Login successful!" }, { status: 200 })
+    
+      } catch (error) {
+        return NextResponse.json({ success: false, message: "Login failed" }, { status: 400 })
+      }
 
-    console.log("Login successful, returning token:", dummyToken)
-
-    return NextResponse.json({ success: true, token: dummyToken, message: "Login successful!" }, { status: 200 })
   } else {
     console.log("Login failed: Missing email or password")
     return NextResponse.json({ success: false, message: "Email and password are required." }, { status: 400 })

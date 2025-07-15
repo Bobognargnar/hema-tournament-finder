@@ -59,6 +59,7 @@ export function TournamentFinderClient({
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userData, setUserData] = useState<UserData | null>(null)
+  const [userIdentity, setUserIdentity] = useState<string | null>(null)
 
   // Check for existing auth token on mount
   useEffect(() => {
@@ -180,27 +181,23 @@ export function TournamentFinderClient({
       if (data.success) {
         const token = data.token
         setAuthToken(token)
+        setUserIdentity(data.identity)
         setIsLoggedIn(true)
 
         if (typeof window !== "undefined") {
           localStorage.setItem("authToken", token)
-          console.log("TournamentFinderClient: Auth token stored in localStorage.")
         }
 
-        console.log("TournamentFinderClient: Login successful! Token:", token)
         setShowLoginDialog(false)
         setLoginForm({ email: "", password: "" })
         await fetchUserDataWithToken(token)
       } else {
-        console.error("TournamentFinderClient: Login failed:", data.message)
         alert(`Login failed: ${data.message}`)
       }
     } catch (error) {
-      console.error("TournamentFinderClient: Error during login:", error)
       alert("An error occurred during login.")
     } finally {
       setLoginLoading(false)
-      console.log("TournamentFinderClient: Login attempt finished.")
     }
   }
 
@@ -322,7 +319,7 @@ export function TournamentFinderClient({
                   {userData && (
                     <div className="flex items-center gap-2 text-gray-700">
                       <User className="w-4 h-4" />
-                      <span>Hello, {userData.name}</span>
+                      <span>Hello, {userIdentity}</span>
                     </div>
                   )}
                   <Button variant="ghost" className="flex items-center gap-2" onClick={handleLogout}>
