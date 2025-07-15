@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import type { Tournament, DisciplineDetail } from "@/types/tournament"
 import { disciplineOptions, tournamentTypeOptions } from "@/utils/tournament"
+import type { TournamentType } from "@/types/tournament"
 import { TournamentFiltersComponent } from "@/components/tournament-filters"
 import TournamentCard from "@/components/tournament-card"
 import { OpenLayersMap } from "@/components/OpenLayersMap"
@@ -20,7 +21,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Sword, Map, LogIn, Loader2, LogOut, User, Plus } from "lucide-react"
+import { Sword, Map, LogIn, Loader2, LogOut, User, Plus, Trash2 } from "lucide-react"
 
 interface UserData {
   name: string
@@ -33,16 +34,23 @@ interface TournamentFinderClientProps {
   initialMapZoom: number // New prop for initial zoom
 }
 
+interface DisciplineRow {
+  name: string
+  type: TournamentType
+}
+
 interface TournamentSubmission {
   name: string
   location: string
   date: string
-  disciplines: string[]
+  disciplines: DisciplineRow[]
   description: string
   registrationLink: string
   venueDetails: string
   contactEmail: string
   rulesLink: string
+  longitude: string
+  latitude: string
 }
 
 export function TournamentFinderClient({
@@ -79,6 +87,8 @@ export function TournamentFinderClient({
     venueDetails: "",
     contactEmail: "",
     rulesLink: "",
+    longitude: "",
+    latitude: "",
   })
   const [showLoginDialog, setShowLoginDialog] = useState(false)
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
@@ -268,13 +278,20 @@ export function TournamentFinderClient({
 
     setSubmitLoading(true)
     try {
+      const submissionData = {
+        ...tournamentForm,
+        coordinates:
+          tournamentForm.longitude && tournamentForm.latitude
+            ? [parseFloat(tournamentForm.longitude), parseFloat(tournamentForm.latitude)]
+            : undefined,
+      }
       const response = await fetch("/api/tournaments/submit", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
         },
-        body: JSON.stringify(tournamentForm),
+        body: JSON.stringify(submissionData),
       })
 
       const data = await response.json()
@@ -293,6 +310,8 @@ export function TournamentFinderClient({
           venueDetails: "",
           contactEmail: "",
           rulesLink: "",
+          longitude: "",
+          latitude: "",
         })
       } else {
         alert(`Failed to submit tournament: ${data.message}`)
@@ -454,34 +473,94 @@ export function TournamentFinderClient({
                             disabled={submitLoading}
                           />
                         </div>
-
-                        <div>
-                          <Label htmlFor="tournament-date">Date</Label>
-                          <Input
-                            id="tournament-date"
-                            type="date"
-                            value={tournamentForm.date}
-                            onChange={(e) => setTournamentForm({ ...tournamentForm, date: e.target.value })}
-                            disabled={submitLoading}
-                          />
+                        <div className="flex gap-4">
+                          <div className="flex-1">
+                            <Label htmlFor="tournament-longitude">Longitude</Label>
+                            <Input
+                              id="tournament-longitude"
+                              type="number"
+                              step="any"
+                              value={tournamentForm.longitude}
+                              onChange={(e) => setTournamentForm({ ...tournamentForm, longitude: e.target.value })}
+                              placeholder="e.g. 16.3738"
+                              disabled={submitLoading}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <Label htmlFor="tournament-latitude">Latitude</Label>
+                            <Input
+                              id="tournament-latitude"
+                              type="number"
+                              step="any"
+                              value={tournamentForm.latitude}
+                              onChange={(e) => setTournamentForm({ ...tournamentForm, latitude: e.target.value })}
+                              placeholder="e.g. 48.2082"
+                              disabled={submitLoading}
+                            />
+                          </div>
                         </div>
 
                         <div>
                           <Label>Disciplines</Label>
-                          <div className="grid grid-cols-2 gap-2 mt-2">
-                            {disciplineOptions.map((discipline) => (
-                              <div key={discipline} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`discipline-${discipline}`}
-                                  checked={tournamentForm.disciplines.includes(discipline)}
-                                  onCheckedChange={(checked) => handleDisciplineToggle(discipline, checked as boolean)}
+                          <div className="space-y-2 mt-2">
+                            {tournamentForm.disciplines.map((row, idx) => (
+                              <div key={idx} className="flex gap-2 items-center">
+                                <select
+                                  className="border rounded px-2 py-1 flex-1"
+                                  value={row.name}
+                                  onChange={e => {
+                                    const newRows = [...tournamentForm.disciplines]
+                                    newRows[idx].name = e.target.value
+                                    setTournamentForm({ ...tournamentForm, disciplines: newRows })
+                                  }}
                                   disabled={submitLoading}
-                                />
-                                <Label htmlFor={`discipline-${discipline}`} className="text-sm">
-                                  {discipline}
-                                </Label>
+                                >
+                                  <option value="">Select discipline</option>
+                                  {disciplineOptions.map(opt => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                  ))}
+                                </select>
+                                <select
+                                  className="border rounded px-2 py-1 flex-1"
+                                  value={row.type}
+                                  onChange={e => {
+                                    const newRows = [...tournamentForm.disciplines]
+                                    newRows[idx].type = e.target.value as TournamentType
+                                    setTournamentForm({ ...tournamentForm, disciplines: newRows })
+                                  }}
+                                  disabled={submitLoading}
+                                >
+                                  <option value="">Select type</option>
+                                  {tournamentTypeOptions.map(opt => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  className="text-red-600 p-2 hover:bg-red-50 rounded"
+                                  onClick={() => {
+                                    setTournamentForm({
+                                      ...tournamentForm,
+                                      disciplines: tournamentForm.disciplines.filter((_, i) => i !== idx),
+                                    })
+                                  }}
+                                  disabled={submitLoading}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
                               </div>
                             ))}
+                            <button
+                              type="button"
+                              className="mt-2 px-3 py-1 bg-blue-100 text-blue-800 rounded border border-blue-200"
+                              onClick={() => setTournamentForm({
+                                ...tournamentForm,
+                                disciplines: [...tournamentForm.disciplines, { name: "", type: "Open" as TournamentType }],
+                              })}
+                              disabled={submitLoading}
+                            >
+                              + Add Discipline
+                            </button>
                           </div>
                         </div>
 
@@ -498,7 +577,7 @@ export function TournamentFinderClient({
                         </div>
 
                         <div>
-                          <Label htmlFor="tournament-registration">Registration Link</Label>
+                          <Label htmlFor="tournament-registration">Officiale Website / Registration Link</Label>
                           <Input
                             id="tournament-registration"
                             type="url"
