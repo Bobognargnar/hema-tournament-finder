@@ -66,10 +66,19 @@ export function TournamentFinderClient({
     console.log("TournamentFinderClient: useEffect for auth token check triggered.")
     if (typeof window !== "undefined") {
       const storedToken = localStorage.getItem("authToken")
+      const storedUserIdentity = localStorage.getItem("userIdentity")
+
       if (storedToken) {
         setAuthToken(storedToken)
         setIsLoggedIn(true)
         console.log("TournamentFinderClient: Found stored auth token.")
+
+        // Restore user identity if available
+        if (storedUserIdentity) {
+          setUserIdentity(storedUserIdentity)
+          console.log("TournamentFinderClient: Restored user identity:", storedUserIdentity)
+        }
+
         // Fetch user data with the stored token
         fetchUserDataWithToken(storedToken)
       } else {
@@ -180,12 +189,16 @@ export function TournamentFinderClient({
 
       if (data.success) {
         const token = data.token
+        const identity = data.identity
+
         setAuthToken(token)
-        setUserIdentity(data.identity)
+        setUserIdentity(identity)
         setIsLoggedIn(true)
 
         if (typeof window !== "undefined") {
           localStorage.setItem("authToken", token)
+          localStorage.setItem("userIdentity", identity)
+          console.log("TournamentFinderClient: Stored auth token and user identity in localStorage.")
         }
 
         setShowLoginDialog(false)
@@ -195,6 +208,7 @@ export function TournamentFinderClient({
         alert(`Login failed: ${data.message}`)
       }
     } catch (error) {
+      console.error("TournamentFinderClient: Error during login:", error)
       alert("An error occurred during login.")
     } finally {
       setLoginLoading(false)
@@ -206,11 +220,13 @@ export function TournamentFinderClient({
     setAuthToken(null)
     setIsLoggedIn(false)
     setUserData(null)
+    setUserIdentity(null)
     setFilters((prevFilters) => ({ ...prevFilters, showFavorites: false }))
 
     if (typeof window !== "undefined") {
       localStorage.removeItem("authToken")
-      console.log("TournamentFinderClient: Auth token removed from localStorage.")
+      localStorage.removeItem("userIdentity")
+      console.log("TournamentFinderClient: Auth token and user identity removed from localStorage.")
     }
 
     console.log("TournamentFinderClient: Logged out.")
@@ -316,7 +332,7 @@ export function TournamentFinderClient({
             <div className="flex items-center gap-4">
               {isLoggedIn ? (
                 <>
-                  {userData && (
+                  {userIdentity && (
                     <div className="flex items-center gap-2 text-gray-700">
                       <User className="w-4 h-4" />
                       <span>Hello, {userIdentity}</span>
