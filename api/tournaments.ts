@@ -1,5 +1,6 @@
 import type { Tournament } from "@/types/tournament"
 
+// Fallback mock data in case the API is not available
 const mockTournaments: Tournament[] = [
   {
     id: 1,
@@ -96,13 +97,61 @@ const mockTournaments: Tournament[] = [
 ]
 
 export const fetchTournaments = async (): Promise<Tournament[]> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500))
-  return mockTournaments
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL
+
+  if (!baseUrl) {
+    console.warn("API_BASE_URL not found")
+    return []
+  }
+
+  try {
+    const response = await fetch(`${baseUrl}/rest/v1/tournaments`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': process.env.NEXT_PUBLIC_API_KEY || '',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`)
+    }
+
+    const tournaments: Tournament[] = await response.json()
+    return tournaments
+  } catch (error) {
+    console.error('Failed to fetch tournaments from API:', error)
+    console.warn('Falling back to mock data')
+    return []
+  }
 }
 
 export const fetchTournamentById = async (id: number): Promise<Tournament | undefined> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300))
-  return mockTournaments.find((t) => t.id === id)
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL
+
+  if (!baseUrl) {
+    console.warn("API_BASE_URL not found")
+    return undefined
+  }
+
+  try {
+    const response = await fetch(`${baseUrl}/rest/v1/tournaments?id=eq.${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': process.env.NEXT_PUBLIC_API_KEY || '',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`)
+    }
+
+    const tournament: Tournament[] = await response.json()
+    return tournament[0]
+  } catch (error) {
+    console.error('Failed to fetch tournaments from API:', error)
+    console.warn('Falling back to mock data')
+    return undefined
+  }
 }

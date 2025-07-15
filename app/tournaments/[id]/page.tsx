@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,14 +12,15 @@ import { useRouter } from "next/navigation"
 import { getTournamentTypeColor } from "@/utils/tournament" // Updated import path
 
 interface TournamentDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default function TournamentDetailPage({ params }: TournamentDetailPageProps) {
   const router = useRouter()
-  const tournamentId = Number.parseInt(params.id)
+  const resolvedParams = use(params)
+  const tournamentId = Number.parseInt(resolvedParams.id)
   const [tournament, setTournament] = useState<Tournament | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -118,14 +119,18 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex flex-wrap gap-2">
-                  {tournament.disciplines.map((discipline: DisciplineDetail, index: number) => (
-                    <Badge
-                      key={`${discipline.name}-${discipline.type}-${index}`}
-                      className={`px-3 py-1 text-base ${getTournamentTypeColor(discipline.type)}`}
-                    >
-                      {discipline.name} ({discipline.type})
-                    </Badge>
-                  ))}
+                  {tournament.disciplines && tournament.disciplines.length > 0 ? (
+                    tournament.disciplines.map((discipline: DisciplineDetail, index: number) => (
+                      <Badge
+                        key={`${discipline.name}-${discipline.type}-${index}`}
+                        className={`px-3 py-1 text-base ${getTournamentTypeColor(discipline.type)}`}
+                      >
+                        {discipline.name} ({discipline.type})
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 italic">No disciplines listed for this tournament.</p>
+                  )}
                 </div>
 
                 <div>
