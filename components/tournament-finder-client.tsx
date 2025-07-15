@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -18,7 +19,8 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { Sword, Map, LogIn, Loader2, LogOut, User } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Sword, Map, LogIn, Loader2, LogOut, User, Plus } from "lucide-react"
 
 interface UserData {
   name: string
@@ -29,6 +31,18 @@ interface TournamentFinderClientProps {
   initialTournaments: Tournament[]
   initialMapCenter: [number, number] // [longitude, latitude]
   initialMapZoom: number // New prop for initial zoom
+}
+
+interface TournamentSubmission {
+  name: string
+  location: string
+  date: string
+  disciplines: string[]
+  description: string
+  registrationLink: string
+  venueDetails: string
+  contactEmail: string
+  rulesLink: string
 }
 
 export function TournamentFinderClient({
@@ -43,6 +57,7 @@ export function TournamentFinderClient({
   const [tournaments, setTournaments] = useState<Tournament[]>(initialTournaments)
   const [loading, setLoading] = useState(false)
   const [loginLoading, setLoginLoading] = useState(false)
+  const [submitLoading, setSubmitLoading] = useState(false)
   const [filters, setFilters] = useState({
     startDate: "",
     endDate: "",
@@ -54,7 +69,19 @@ export function TournamentFinderClient({
     email: "",
     password: "",
   })
+  const [tournamentForm, setTournamentForm] = useState<TournamentSubmission>({
+    name: "",
+    location: "",
+    date: "",
+    disciplines: [],
+    description: "",
+    registrationLink: "",
+    venueDetails: "",
+    contactEmail: "",
+    rulesLink: "",
+  })
   const [showLoginDialog, setShowLoginDialog] = useState(false)
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false)
   const [showAuthPromptDialog, setShowAuthPromptDialog] = useState(false)
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -232,6 +259,52 @@ export function TournamentFinderClient({
     console.log("TournamentFinderClient: Logged out.")
   }
 
+  const handleSubmitTournament = async () => {
+    console.log("TournamentFinderClient: handleSubmitTournament called.")
+    if (!tournamentForm.name.trim()) {
+      alert("Tournament name is required.")
+      return
+    }
+
+    setSubmitLoading(true)
+    try {
+      const response = await fetch("/api/tournaments/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(tournamentForm),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        alert("Tournament submitted successfully! It will be reviewed before being published.")
+        setShowSubmitDialog(false)
+        // Reset form
+        setTournamentForm({
+          name: "",
+          location: "",
+          date: "",
+          disciplines: [],
+          description: "",
+          registrationLink: "",
+          venueDetails: "",
+          contactEmail: "",
+          rulesLink: "",
+        })
+      } else {
+        alert(`Failed to submit tournament: ${data.message}`)
+      }
+    } catch (error) {
+      console.error("TournamentFinderClient: Error submitting tournament:", error)
+      alert("An error occurred while submitting the tournament.")
+    } finally {
+      setSubmitLoading(false)
+    }
+  }
+
   const handleToggleFavorite = async (tournamentId: number) => {
     console.log("TournamentFinderClient: handleToggleFavorite called for tournamentId:", tournamentId)
     if (!isLoggedIn || !userData) {
@@ -318,6 +391,13 @@ export function TournamentFinderClient({
     }
   }
 
+  const handleDisciplineToggle = (discipline: string, checked: boolean) => {
+    setTournamentForm((prev) => ({
+      ...prev,
+      disciplines: checked ? [...prev.disciplines, discipline] : prev.disciplines.filter((d) => d !== discipline),
+    }))
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -338,6 +418,151 @@ export function TournamentFinderClient({
                       <span>Hello, {userIdentity}</span>
                     </div>
                   )}
+                  <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="flex items-center gap-2 bg-transparent">
+                        <Plus className="w-4 h-4" />
+                        Submit a Tournament
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Submit a Tournament</DialogTitle>
+                        <DialogDescription>
+                          Share your tournament with the HEMA community. All fields except name are optional.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="tournament-name">Tournament Name *</Label>
+                          <Input
+                            id="tournament-name"
+                            value={tournamentForm.name}
+                            onChange={(e) => setTournamentForm({ ...tournamentForm, name: e.target.value })}
+                            placeholder="Enter tournament name"
+                            disabled={submitLoading}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="tournament-location">Location</Label>
+                          <Input
+                            id="tournament-location"
+                            value={tournamentForm.location}
+                            onChange={(e) => setTournamentForm({ ...tournamentForm, location: e.target.value })}
+                            placeholder="City, Country"
+                            disabled={submitLoading}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="tournament-date">Date</Label>
+                          <Input
+                            id="tournament-date"
+                            type="date"
+                            value={tournamentForm.date}
+                            onChange={(e) => setTournamentForm({ ...tournamentForm, date: e.target.value })}
+                            disabled={submitLoading}
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Disciplines</Label>
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            {disciplineOptions.map((discipline) => (
+                              <div key={discipline} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`discipline-${discipline}`}
+                                  checked={tournamentForm.disciplines.includes(discipline)}
+                                  onCheckedChange={(checked) => handleDisciplineToggle(discipline, checked as boolean)}
+                                  disabled={submitLoading}
+                                />
+                                <Label htmlFor={`discipline-${discipline}`} className="text-sm">
+                                  {discipline}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="tournament-description">Description</Label>
+                          <Textarea
+                            id="tournament-description"
+                            value={tournamentForm.description}
+                            onChange={(e) => setTournamentForm({ ...tournamentForm, description: e.target.value })}
+                            placeholder="Describe your tournament..."
+                            rows={3}
+                            disabled={submitLoading}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="tournament-registration">Registration Link</Label>
+                          <Input
+                            id="tournament-registration"
+                            type="url"
+                            value={tournamentForm.registrationLink}
+                            onChange={(e) => setTournamentForm({ ...tournamentForm, registrationLink: e.target.value })}
+                            placeholder="https://..."
+                            disabled={submitLoading}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="tournament-venue">Venue Details</Label>
+                          <Textarea
+                            id="tournament-venue"
+                            value={tournamentForm.venueDetails}
+                            onChange={(e) => setTournamentForm({ ...tournamentForm, venueDetails: e.target.value })}
+                            placeholder="Venue address and details..."
+                            rows={2}
+                            disabled={submitLoading}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="tournament-contact">Contact Email</Label>
+                          <Input
+                            id="tournament-contact"
+                            type="email"
+                            value={tournamentForm.contactEmail}
+                            onChange={(e) => setTournamentForm({ ...tournamentForm, contactEmail: e.target.value })}
+                            placeholder="contact@tournament.com"
+                            disabled={submitLoading}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="tournament-rules">Rules Link</Label>
+                          <Input
+                            id="tournament-rules"
+                            type="url"
+                            value={tournamentForm.rulesLink}
+                            onChange={(e) => setTournamentForm({ ...tournamentForm, rulesLink: e.target.value })}
+                            placeholder="https://..."
+                            disabled={submitLoading}
+                          />
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-4">
+                          <Button variant="outline" onClick={() => setShowSubmitDialog(false)} disabled={submitLoading}>
+                            Cancel
+                          </Button>
+                          <Button onClick={handleSubmitTournament} disabled={submitLoading}>
+                            {submitLoading ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                Submitting...
+                              </>
+                            ) : (
+                              "Submit Tournament"
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                   <Button variant="ghost" className="flex items-center gap-2" onClick={handleLogout}>
                     <LogOut className="w-4 h-4" />
                     Logout

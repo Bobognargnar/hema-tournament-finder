@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server"
 import type { Tournament } from "@/types/tournament"
 
 // Fallback mock data in case the API is not available
@@ -96,37 +97,32 @@ const mockTournaments: Tournament[] = [
   },
 ]
 
-export const fetchTournaments = async (): Promise<Tournament[]> => {
+export async function GET() {
+  const baseUrl = process.env.API_BASE_URL
+
+  if (!baseUrl) {
+    console.warn("API_BASE_URL not found, returning mock data")
+    return NextResponse.json(mockTournaments)
+  }
+
   try {
-    const response = await fetch("/api/tournaments")
+    const response = await fetch(`${baseUrl}/rest/v1/tournaments`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: process.env.NEXT_PUBLIC_API_KEY || "",
+      },
+    })
 
     if (!response.ok) {
       throw new Error(`API request failed: ${response.status} ${response.statusText}`)
     }
 
     const tournaments: Tournament[] = await response.json()
-    return tournaments
+    return NextResponse.json(tournaments)
   } catch (error) {
-    console.error("Failed to fetch tournaments:", error)
-    return []
-  }
-}
-
-export const fetchTournamentById = async (id: number): Promise<Tournament | undefined> => {
-  try {
-    const response = await fetch(`/api/tournaments/${id}`)
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        return undefined
-      }
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`)
-    }
-
-    const tournament: Tournament = await response.json()
-    return tournament
-  } catch (error) {
-    console.error("Failed to fetch tournament:", error)
-    return undefined
+    console.error("Failed to fetch tournaments from API:", error)
+    console.warn("Falling back to mock data")
+    return NextResponse.json(mockTournaments)
   }
 }
