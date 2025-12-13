@@ -3,9 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import type { Tournament, DisciplineDetail } from "@/types/tournament"
-import { getTournamentTypeColor } from "@/utils/tournament"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin, Star } from "lucide-react"
 import Link from "next/link"
 
@@ -92,14 +90,24 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
                 </div>
 
                 <div className="flex flex-wrap gap-1">
-                  {tournament.disciplines.map((discipline: DisciplineDetail, index: number) => (
-                    <Badge
-                      key={`${discipline.name}-${discipline.type}-${index}`}
-                      className={`text-xs px-2 py-0.5 ${getTournamentTypeColor(discipline.type)}`}
-                    >
-                      {discipline.name} ({discipline.type})
-                    </Badge>
-                  ))}
+                  {tournament.disciplines.map((discipline: DisciplineDetail, index: number) => {
+                    const colorStyle = {
+                      Male: { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' },
+                      Female: { backgroundColor: '#fce7f3', color: '#9d174d', borderColor: '#fbcfe8' },
+                      Open: { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' },
+                      Other: { backgroundColor: '#f3e8ff', color: '#6b21a8', borderColor: '#e9d5ff' },
+                    }[discipline.type] || { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' }
+                    
+                    return (
+                      <span
+                        key={`${discipline.name}-${discipline.type}-${index}`}
+                        className="text-xs px-2 py-0.5 rounded-full border"
+                        style={colorStyle}
+                      >
+                        {discipline.name} ({discipline.type})
+                      </span>
+                    )
+                  })}
                 </div>
               </div>
             </div>

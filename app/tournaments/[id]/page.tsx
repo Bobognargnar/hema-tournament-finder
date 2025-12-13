@@ -3,13 +3,11 @@
 import { useState, useEffect, use } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Calendar, MapPin, LinkIcon, Mail, BookOpen, Loader2 } from "lucide-react"
 import { fetchTournamentById } from "@/lib/tournaments"
 import type { Tournament, DisciplineDetail } from "@/types/tournament"
-import { OpenLayersMap } from "@/components/OpenLayersMap" // Updated import path and casing
+import { OpenLayersMap } from "@/components/OpenLayersMap"
 import { useRouter } from "next/navigation"
-import { getTournamentTypeColor } from "@/utils/tournament" // Updated import path
 
 interface TournamentDetailPageProps {
   params: Promise<{
@@ -129,14 +127,24 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
               <CardContent className="space-y-6">
                 <div className="flex flex-wrap gap-2">
                   {tournament.disciplines && tournament.disciplines.length > 0 ? (
-                    tournament.disciplines.map((discipline: DisciplineDetail, index: number) => (
-                      <Badge
-                        key={`${discipline.name}-${discipline.type}-${index}`}
-                        className={`px-3 py-1 text-base ${getTournamentTypeColor(discipline.type)}`}
-                      >
-                        {discipline.name} ({discipline.type})
-                      </Badge>
-                    ))
+                    tournament.disciplines.map((discipline: DisciplineDetail, index: number) => {
+                      const colorStyle = {
+                        Male: { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' },
+                        Female: { backgroundColor: '#fce7f3', color: '#9d174d', borderColor: '#fbcfe8' },
+                        Open: { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' },
+                        Other: { backgroundColor: '#f3e8ff', color: '#6b21a8', borderColor: '#e9d5ff' },
+                      }[discipline.type] || { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' }
+                      
+                      return (
+                        <span
+                          key={`${discipline.name}-${discipline.type}-${index}`}
+                          className="px-3 py-1 text-base rounded-full border"
+                          style={colorStyle}
+                        >
+                          {discipline.name} ({discipline.type})
+                        </span>
+                      )
+                    })
                   ) : (
                     <p className="text-gray-500 italic">No disciplines listed for this tournament.</p>
                   )}
