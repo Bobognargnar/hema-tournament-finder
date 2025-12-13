@@ -56,6 +56,11 @@ export async function GET(
 
     // Transform snake_case to camelCase
     const t = rawTournaments[0] as Record<string, unknown>
+    
+    // Database stores as [lat, lon], OpenLayers needs [lon, lat]
+    const rawCoords = t.coordinates as [number, number] | null
+    const coords = rawCoords ? [rawCoords[1], rawCoords[0]] as [number, number] : null
+    
     const tournament: Tournament = {
       id: t.id as number,
       name: t.name as string,
@@ -63,7 +68,7 @@ export async function GET(
       date: t.date as string,
       disciplines: t.disciplines as Tournament["disciplines"],
       image: (t.image as string) || "/placeholder.svg",
-      coordinates: t.coordinates as [number, number],
+      coordinates: coords as [number, number],
       description: t.description as string,
       registrationLink: t.registration_link as string,
       venueDetails: t.venue_details as string,

@@ -22,7 +22,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Sword, Map, LogIn, Loader2, LogOut, User, Plus, Trash2, Check } from "lucide-react"
+import { Sword, Map, LogIn, Loader2, LogOut, User, Plus, Trash2, Check, MapPin } from "lucide-react"
 
 interface UserData {
   name: string
@@ -710,7 +710,7 @@ export function TournamentFinderClient({
                             </p>
                           )}
                         </div>
-                        <div className="flex gap-4">
+                        <div className="flex gap-4 items-end">
                           <div className="flex-1">
                             <Label htmlFor="tournament-longitude">Longitude *</Label>
                             <Input
@@ -735,6 +735,17 @@ export function TournamentFinderClient({
                               disabled={submitLoading}
                             />
                           </div>
+                          {tournamentForm.longitude && tournamentForm.latitude && (
+                            <a
+                              href={`https://www.google.com/maps?q=${tournamentForm.latitude},${tournamentForm.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                              title="View on Google Maps"
+                            >
+                              <MapPin className="w-5 h-5" />
+                            </a>
+                          )}
                         </div>
 
                         <div>

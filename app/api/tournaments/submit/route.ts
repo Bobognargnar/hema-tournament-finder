@@ -95,7 +95,8 @@ export async function POST(request: NextRequest) {
         venue_details: body.venueDetails,
         contact_email: body.contactEmail,
         rules_link: body.rulesLink,
-        coordinates: body.coordinates,
+        // Form sends [lon, lat], database stores as [lat, lon]
+        coordinates: body.coordinates ? [body.coordinates[1], body.coordinates[0]] : null,
         user_id: userId,
         submitted_by: body.submittedBy || userEmail,
       }

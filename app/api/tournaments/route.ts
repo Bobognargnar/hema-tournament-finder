@@ -41,21 +41,27 @@ export async function GET() {
     console.log(`Fetched ${rawTournaments.length} tournaments from Supabase`)
 
     // Transform snake_case to camelCase
-    const tournaments: Tournament[] = rawTournaments.map((t: Record<string, unknown>) => ({
-      id: t.id,
-      name: t.name,
-      location: t.location,
-      date: t.date,
-      disciplines: t.disciplines,
-      image: t.image || "/placeholder.svg",
-      coordinates: t.coordinates,
-      description: t.description,
-      registrationLink: t.registration_link,
-      venueDetails: t.venue_details,
-      contactEmail: t.contact_email,
-      rulesLink: t.rules_link,
-      submittedBy: t.submitted_by || "",
-    }))
+    const tournaments: Tournament[] = rawTournaments.map((t: Record<string, unknown>) => {
+      // Database stores as [lat, lon], OpenLayers needs [lon, lat]
+      const rawCoords = t.coordinates as [number, number] | null
+      const coords = rawCoords ? [rawCoords[1], rawCoords[0]] as [number, number] : null
+      
+      return {
+        id: t.id,
+        name: t.name,
+        location: t.location,
+        date: t.date,
+        disciplines: t.disciplines,
+        image: t.image || "/placeholder.svg",
+        coordinates: coords,
+        description: t.description,
+        registrationLink: t.registration_link,
+        venueDetails: t.venue_details,
+        contactEmail: t.contact_email,
+        rulesLink: t.rules_link,
+        submittedBy: t.submitted_by || "",
+      }
+    })
 
     return NextResponse.json(tournaments)
   } catch (error) {
