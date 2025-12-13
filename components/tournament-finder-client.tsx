@@ -101,6 +101,7 @@ export function TournamentFinderClient({
   const [showAuthPromptDialog, setShowAuthPromptDialog] = useState(false)
   const [signupForm, setSignupForm] = useState({ email: "", password: "", confirmPassword: "" })
   const [signupLoading, setSignupLoading] = useState(false)
+  const [geocodingLoading, setGeocodingLoading] = useState(false)
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -375,10 +376,83 @@ export function TournamentFinderClient({
     }
   }
 
+  // Geocode location using OpenStreetMap Nominatim API
+  const geocodeLocation = async (location: string) => {
+    if (!location.trim()) return
+
+    setGeocodingLoading(true)
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&limit=1`,
+        {
+          headers: {
+            "User-Agent": "HEMATournamentFinder/1.0",
+          },
+        }
+      )
+
+      const data = await response.json()
+
+      if (data && data.length > 0) {
+        const { lon, lat } = data[0]
+        setTournamentForm((prev) => ({
+          ...prev,
+          longitude: lon,
+          latitude: lat,
+        }))
+        console.log(`Geocoded "${location}" to: ${lat}, ${lon}`)
+      } else {
+        console.log(`No coordinates found for "${location}"`)
+      }
+    } catch (error) {
+      console.error("Geocoding error:", error)
+    } finally {
+      setGeocodingLoading(false)
+    }
+  }
+
   const handleSubmitTournament = async () => {
     console.log("TournamentFinderClient: handleSubmitTournament called.")
+    
+    // Validate all required fields
     if (!tournamentForm.name.trim()) {
       alert("Tournament name is required.")
+      return
+    }
+    if (!tournamentForm.location.trim()) {
+      alert("Location is required.")
+      return
+    }
+    if (!tournamentForm.date) {
+      alert("Date is required.")
+      return
+    }
+    if (tournamentForm.disciplines.length === 0) {
+      alert("At least one discipline is required.")
+      return
+    }
+    if (!tournamentForm.description.trim()) {
+      alert("Description is required.")
+      return
+    }
+    if (!tournamentForm.registrationLink.trim()) {
+      alert("Registration link is required.")
+      return
+    }
+    if (!tournamentForm.venueDetails.trim()) {
+      alert("Venue details are required.")
+      return
+    }
+    if (!tournamentForm.contactEmail.trim()) {
+      alert("Contact email is required.")
+      return
+    }
+    if (!tournamentForm.rulesLink.trim()) {
+      alert("Rules link is required.")
+      return
+    }
+    if (!tournamentForm.longitude || !tournamentForm.latitude) {
+      alert("Coordinates are required. Please enter a location and wait for geocoding, or enter coordinates manually.")
       return
     }
 
@@ -604,7 +678,7 @@ export function TournamentFinderClient({
                       <DialogHeader>
                         <DialogTitle>Submit a Tournament</DialogTitle>
                         <DialogDescription>
-                          Share your tournament with the HEMA community. All fields except name are optional.
+                          Share your tournament with the HEMA community. All fields are required.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
@@ -620,18 +694,25 @@ export function TournamentFinderClient({
                         </div>
 
                         <div>
-                          <Label htmlFor="tournament-location">Location</Label>
+                          <Label htmlFor="tournament-location">Location *</Label>
                           <Input
                             id="tournament-location"
                             value={tournamentForm.location}
                             onChange={(e) => setTournamentForm({ ...tournamentForm, location: e.target.value })}
-                            placeholder="City, Country"
+                            onBlur={(e) => geocodeLocation(e.target.value)}
+                            placeholder="City, Country (coordinates auto-filled)"
                             disabled={submitLoading}
                           />
+                          {geocodingLoading && (
+                            <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              Looking up coordinates...
+                            </p>
+                          )}
                         </div>
                         <div className="flex gap-4">
                           <div className="flex-1">
-                            <Label htmlFor="tournament-longitude">Longitude</Label>
+                            <Label htmlFor="tournament-longitude">Longitude *</Label>
                             <Input
                               id="tournament-longitude"
                               type="number"
@@ -643,7 +724,7 @@ export function TournamentFinderClient({
                             />
                           </div>
                           <div className="flex-1">
-                            <Label htmlFor="tournament-latitude">Latitude</Label>
+                            <Label htmlFor="tournament-latitude">Latitude *</Label>
                             <Input
                               id="tournament-latitude"
                               type="number"
@@ -657,7 +738,7 @@ export function TournamentFinderClient({
                         </div>
 
                         <div>
-                          <Label htmlFor="tournament-date">Date</Label>
+                          <Label htmlFor="tournament-date">Date *</Label>
                           <Input
                             id="tournament-date"
                             type="date"
@@ -668,7 +749,7 @@ export function TournamentFinderClient({
                         </div>
 
                         <div>
-                          <Label>Disciplines</Label>
+                          <Label>Disciplines *</Label>
                           <div className="space-y-2 mt-2">
                             {tournamentForm.disciplines.map((row, idx) => (
                               <div key={idx} className="flex gap-2 items-center">
@@ -732,7 +813,7 @@ export function TournamentFinderClient({
                         </div>
 
                         <div>
-                          <Label htmlFor="tournament-description">Description</Label>
+                          <Label htmlFor="tournament-description">Description *</Label>
                           <Textarea
                             id="tournament-description"
                             value={tournamentForm.description}
@@ -744,7 +825,7 @@ export function TournamentFinderClient({
                         </div>
 
                         <div>
-                          <Label htmlFor="tournament-registration">Officiale Website / Registration Link</Label>
+                          <Label htmlFor="tournament-registration">Official Website / Registration Link *</Label>
                           <Input
                             id="tournament-registration"
                             type="url"
@@ -756,7 +837,7 @@ export function TournamentFinderClient({
                         </div>
 
                         <div>
-                          <Label htmlFor="tournament-venue">Venue Details</Label>
+                          <Label htmlFor="tournament-venue">Venue Details *</Label>
                           <Textarea
                             id="tournament-venue"
                             value={tournamentForm.venueDetails}
@@ -768,7 +849,7 @@ export function TournamentFinderClient({
                         </div>
 
                         <div>
-                          <Label htmlFor="tournament-contact">Contact Email</Label>
+                          <Label htmlFor="tournament-contact">Contact Email *</Label>
                           <Input
                             id="tournament-contact"
                             type="email"
@@ -780,7 +861,7 @@ export function TournamentFinderClient({
                         </div>
 
                         <div>
-                          <Label htmlFor="tournament-rules">Rules Link</Label>
+                          <Label htmlFor="tournament-rules">Rules Link *</Label>
                           <Input
                             id="tournament-rules"
                             type="url"
