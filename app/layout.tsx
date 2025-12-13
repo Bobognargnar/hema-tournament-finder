@@ -13,7 +13,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="min-h-screen flex flex-col">
+        <div className="flex-1">{children}</div>
+        <footer className="bg-gray-800 text-gray-300 py-4 text-center text-sm">
+          <p>
+            Created by <span className="text-white font-medium">Fabrizio La Rosa</span>
+            {" • "}
+            <a 
+              href="mailto:fbr.larosa@gmail.com" 
+              className="text-blue-400 hover:text-blue-300 hover:underline"
+            >
+              fbr.larosa@gmail.com
+            </a>
+          </p>
+        </footer>
+      </body>
     </html>
   )
 }
