@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // Get the API endpoint from environment variables
     const apiBaseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL
-    const apiKey = process.env.NEXT_PUBLIC_API_KEY
+    const apiKey = process.env.API_KEY
 
     if (!apiBaseUrl) {
       console.error("API_BASE_URL not configured")
@@ -77,16 +77,16 @@ export async function POST(request: NextRequest) {
         venue_details: body.venueDetails,
         contact_email: body.contactEmail,
         rules_link: body.rulesLink,
-        coordinates: body.coordinates
+        coordinates: body.coordinates,
       }
 
       // Make fetch POST request to the external API
       const response = await fetch(`${apiBaseUrl}/rest/v1/staged_tournaments`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'apikey': apiKey || '',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json",
+          apikey: apiKey || "",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(submissionData),
       })
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
         console.warn("Could not parse response as JSON, treating as success:", parseError)
         responseData = { success: true }
       }
-      
+
       console.log("Tournament submitted successfully to external API:", responseData)
 
       return NextResponse.json({
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       })
     } catch (error) {
       console.error("Error submitting tournament to external API:", error)
-      
+
       const errorMessage = error instanceof Error ? error.message : "Failed to submit tournament"
       return NextResponse.json({ success: false, message: errorMessage }, { status: 500 })
     }

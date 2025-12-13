@@ -15,7 +15,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        apikey: process.env.NEXT_PUBLIC_API_KEY || "",
+        apikey: process.env.API_KEY || "",
       },
     })
 

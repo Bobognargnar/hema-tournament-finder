@@ -10,10 +10,10 @@ export const fetchTournaments = async (): Promise<Tournament[]> => {
 
   try {
     const response = await fetch(`${baseUrl}/rest/v1/tournaments`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
-        'apikey': process.env.NEXT_PUBLIC_API_KEY || '',
+        "Content-Type": "application/json",
+        apikey: process.env.API_KEY || "",
       },
     })
 
@@ -24,8 +24,8 @@ export const fetchTournaments = async (): Promise<Tournament[]> => {
     const tournaments: Tournament[] = await response.json()
     return tournaments
   } catch (error) {
-    console.error('Failed to fetch tournaments from API:', error)
-    console.warn('Falling back to mock data')
+    console.error("Failed to fetch tournaments from API:", error)
+    console.warn("Falling back to mock data")
     return []
   }
 }
@@ -40,10 +40,10 @@ export const fetchTournamentById = async (id: number): Promise<Tournament | unde
 
   try {
     const response = await fetch(`${baseUrl}/rest/v1/tournaments?id=eq.${id}`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
-        'apikey': process.env.NEXT_PUBLIC_API_KEY || '',
+        "Content-Type": "application/json",
+        apikey: process.env.API_KEY || "",
       },
     })
 
@@ -54,8 +54,8 @@ export const fetchTournamentById = async (id: number): Promise<Tournament | unde
     const tournament: Tournament[] = await response.json()
     return tournament[0]
   } catch (error) {
-    console.error('Failed to fetch tournaments from API:', error)
-    console.warn('Falling back to mock data')
+    console.error("Failed to fetch tournaments from API:", error)
+    console.warn("Falling back to mock data")
     return undefined
   }
 }

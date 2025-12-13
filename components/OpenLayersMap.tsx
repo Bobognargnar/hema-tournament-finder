@@ -1,21 +1,33 @@
 "use client"
 
 import { useRef, useEffect } from "react"
-import Map from "ol/Map"
-import View from "ol/View"
-import TileLayer from "ol/layer/Tile"
-import OSM from "ol/source/OSM"
-import Feature from "ol/Feature"
-import Point from "ol/geom/Point"
+import * as olMap from "ol/Map"
+import * as olView from "ol/View"
+import * as olLayerTile from "ol/layer/Tile"
+import * as olSourceOSM from "ol/source/OSM"
+import * as olFeature from "ol/Feature"
+import * as olGeomPoint from "ol/geom/Point"
 import { fromLonLat } from "ol/proj"
-import { Style, Icon } from "ol/style"
-import VectorLayer from "ol/layer/Vector"
-import VectorSource from "ol/source/Vector"
-import Overlay from "ol/Overlay"
+import * as olStyle from "ol/style"
+import * as olLayerVector from "ol/layer/Vector"
+import * as olSourceVector from "ol/source/Vector"
+import * as olOverlay from "ol/Overlay"
 import { defaults as defaultInteractions, MouseWheelZoom } from "ol/interaction"
 import { platformModifierKeyOnly } from "ol/events/condition"
 import type { Tournament, DisciplineDetail } from "@/types/tournament"
 import { getTournamentTypeColor } from "@/utils/tournament"
+
+const Map = (olMap as any).default || olMap
+const View = (olView as any).default || olView
+const TileLayer = (olLayerTile as any).default || olLayerTile
+const OSM = (olSourceOSM as any).default || olSourceOSM
+const Feature = (olFeature as any).default || olFeature
+const Point = (olGeomPoint as any).default || olGeomPoint
+const Style = (olStyle as any).Style || olStyle.default
+const Icon = (olStyle as any).Icon || (olStyle as any).default?.Icon
+const VectorLayer = (olLayerVector as any).default || olLayerVector
+const VectorSource = (olSourceVector as any).default || olSourceVector
+const Overlay = (olOverlay as any).default || olOverlay
 
 interface OpenLayersMapProps {
   tournaments: Tournament[]
@@ -26,9 +38,9 @@ interface OpenLayersMapProps {
 export function OpenLayersMap({ tournaments, initialZoom = 2, initialCenter }: OpenLayersMapProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
-  const mapInstance = useRef<Map | null>(null)
-  const vectorSource = useRef<VectorSource | null>(null)
-  const popupOverlay = useRef<Overlay | null>(null)
+  const mapInstance = useRef<any | null>(null)
+  const vectorSource = useRef<any | null>(null)
+  const popupOverlay = useRef<any | null>(null)
 
   console.log("OpenLayersMap: Component rendered.")
   console.log(
@@ -131,9 +143,9 @@ export function OpenLayersMap({ tournaments, initialZoom = 2, initialCenter }: O
     }
 
     // Handle map clicks for popups and centering
-    initialMap.on("click", (event) => {
+    initialMap.on("click", (event: any) => {
       console.log("OpenLayersMap: Map clicked at pixel:", event.pixel)
-      const feature = initialMap.forEachFeatureAtPixel(event.pixel, (feature) => feature)
+      const feature = initialMap.forEachFeatureAtPixel(event.pixel, (feature: any) => feature)
       if (feature && feature.get("tournament")) {
         const tournament = feature.get("tournament") as Tournament
         const coordinates = feature.getGeometry()?.getCoordinates()
