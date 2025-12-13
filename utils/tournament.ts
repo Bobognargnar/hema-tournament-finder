@@ -11,7 +11,7 @@ export const disciplineOptions = [
   "Polearms",
 ]
 
-export const tournamentTypeOptions: TournamentType[] = ["Male", "Female", "Open"]
+export const tournamentTypeOptions: TournamentType[] = ["Male", "Female", "Open", "Other"]
 
 export const getTournamentTypeColor = (type: TournamentType): string => {
   switch (type) {
@@ -21,6 +21,8 @@ export const getTournamentTypeColor = (type: TournamentType): string => {
       return "bg-pink-100 text-pink-800"
     case "Open":
       return "bg-gray-100 text-gray-800"
+    case "Other":
+      return "bg-purple-100 text-purple-800"
     default:
       return "bg-gray-100 text-gray-800"
   }

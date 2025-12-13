@@ -1,4 +1,4 @@
-export type TournamentType = "Male" | "Female" | "Open"
+export type TournamentType = "Male" | "Female" | "Open" | "Other"
 
 export interface DisciplineDetail {
   name: string

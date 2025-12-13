@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 
 interface DisciplineRow {
   name: string
-  type: "Male" | "Female" | "Open"
+  type: "Male" | "Female" | "Open" | "Other"
 }
 
 interface TournamentSubmission {
