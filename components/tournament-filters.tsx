@@ -81,12 +81,18 @@ export function TournamentFiltersComponent({
                 id="start-date"
                 type="date"
                 value={filters.startDate}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const newStartDate = e.target.value
+                  // If end date is set and is less than new start date, update it
+                  const newEndDate = filters.endDate && filters.endDate < newStartDate 
+                    ? newStartDate 
+                    : filters.endDate
                   onFiltersChange({
                     ...filters,
-                    startDate: e.target.value,
+                    startDate: newStartDate,
+                    endDate: newEndDate,
                   })
-                }
+                }}
                 className="text-xs"
               />
             </div>
@@ -98,12 +104,18 @@ export function TournamentFiltersComponent({
                 id="end-date"
                 type="date"
                 value={filters.endDate}
-                onChange={(e) =>
+                min={filters.startDate || undefined}
+                onChange={(e) => {
+                  let newEndDate = e.target.value
+                  // If end date is less than start date, set it to start date
+                  if (filters.startDate && newEndDate < filters.startDate) {
+                    newEndDate = filters.startDate
+                  }
                   onFiltersChange({
                     ...filters,
-                    endDate: e.target.value,
+                    endDate: newEndDate,
                   })
-                }
+                }}
                 className="text-xs"
               />
             </div>
