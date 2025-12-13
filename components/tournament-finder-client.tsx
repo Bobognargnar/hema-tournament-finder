@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import type { Tournament, DisciplineDetail } from "@/types/tournament"
 import { disciplineOptions, tournamentTypeOptions } from "@/utils/tournament"
 import type { TournamentType } from "@/types/tournament"
+import { fetchTournaments, fetchStagedTournaments, type StagedTournament } from "@/api/tournaments"
 import { TournamentFiltersComponent } from "@/components/tournament-filters"
 import TournamentCard from "@/components/tournament-card"
 import { OpenLayersMap } from "@/components/OpenLayersMap"
@@ -21,7 +22,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Sword, Map, LogIn, Loader2, LogOut, User, Plus, Trash2 } from "lucide-react"
+import { Sword, Map, LogIn, Loader2, LogOut, User, Plus, Trash2, Check } from "lucide-react"
 
 interface UserData {
   name: string
@@ -51,6 +52,7 @@ interface TournamentSubmission {
   rulesLink: string
   longitude: string
   latitude: string
+  submittedBy: string
 }
 
 export function TournamentFinderClient({
@@ -63,7 +65,9 @@ export function TournamentFinderClient({
   console.log("TournamentFinderClient: Received initialMapCenter:", initialMapCenter, "initialMapZoom:", initialMapZoom)
 
   const [tournaments, setTournaments] = useState<Tournament[]>(initialTournaments)
+  const [stagedTournaments, setStagedTournaments] = useState<StagedTournament[]>([])
   const [loading, setLoading] = useState(false)
+  const [stagedLoading, setStagedLoading] = useState(true)
   const [loginLoading, setLoginLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [filters, setFilters] = useState({
@@ -89,12 +93,14 @@ export function TournamentFinderClient({
     rulesLink: "",
     longitude: "",
     latitude: "",
+    submittedBy: "",
   })
   const [showLoginDialog, setShowLoginDialog] = useState(false)
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
   const [showAuthPromptDialog, setShowAuthPromptDialog] = useState(false)
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [userData, setUserData] = useState<UserData | null>(null)
   const [userIdentity, setUserIdentity] = useState<string | null>(null)
 
@@ -104,11 +110,13 @@ export function TournamentFinderClient({
     if (typeof window !== "undefined") {
       const storedToken = localStorage.getItem("authToken")
       const storedUserIdentity = localStorage.getItem("userIdentity")
+      const storedIsAdmin = localStorage.getItem("isAdmin") === "true"
 
       if (storedToken) {
         setAuthToken(storedToken)
         setIsLoggedIn(true)
-        console.log("TournamentFinderClient: Found stored auth token.")
+        setIsAdmin(storedIsAdmin)
+        console.log("TournamentFinderClient: Found stored auth token. isAdmin:", storedIsAdmin)
 
         // Restore user identity if available
         if (storedUserIdentity) {
@@ -123,6 +131,28 @@ export function TournamentFinderClient({
       }
     }
   }, [])
+
+  // Fetch staged tournaments when user is logged in
+  useEffect(() => {
+    const loadStagedTournaments = async () => {
+      if (!authToken) {
+        setStagedTournaments([])
+        return
+      }
+      
+      setStagedLoading(true)
+      try {
+        const data = await fetchStagedTournaments(authToken)
+        setStagedTournaments(data)
+        console.log("TournamentFinderClient: Fetched staged tournaments:", data.length)
+      } catch (error) {
+        console.error("TournamentFinderClient: Error fetching staged tournaments:", error)
+      } finally {
+        setStagedLoading(false)
+      }
+    }
+    loadStagedTournaments()
+  }, [authToken])
 
   // Filter tournaments based on current filters
   const filteredTournaments = useMemo(() => {
@@ -227,15 +257,23 @@ export function TournamentFinderClient({
       if (data.success) {
         const token = data.token
         const identity = data.identity
+        const adminStatus = data.isAdmin || false
+
+        // Clear previous user's data before setting new user
+        setUserData(null)
+        setStagedTournaments([])
+        setFilters((prevFilters) => ({ ...prevFilters, showFavorites: false }))
 
         setAuthToken(token)
         setUserIdentity(identity)
         setIsLoggedIn(true)
+        setIsAdmin(adminStatus)
 
         if (typeof window !== "undefined") {
           localStorage.setItem("authToken", token)
           localStorage.setItem("userIdentity", identity)
-          console.log("TournamentFinderClient: Stored auth token and user identity in localStorage.")
+          localStorage.setItem("isAdmin", String(adminStatus))
+          console.log("TournamentFinderClient: Stored auth token, user identity, and admin status in localStorage.")
         }
 
         setShowLoginDialog(false)
@@ -256,6 +294,7 @@ export function TournamentFinderClient({
     console.log("TournamentFinderClient: handleLogout called.")
     setAuthToken(null)
     setIsLoggedIn(false)
+    setIsAdmin(false)
     setUserData(null)
     setUserIdentity(null)
     setFilters((prevFilters) => ({ ...prevFilters, showFavorites: false }))
@@ -263,7 +302,8 @@ export function TournamentFinderClient({
     if (typeof window !== "undefined") {
       localStorage.removeItem("authToken")
       localStorage.removeItem("userIdentity")
-      console.log("TournamentFinderClient: Auth token and user identity removed from localStorage.")
+      localStorage.removeItem("isAdmin")
+      console.log("TournamentFinderClient: Auth token, user identity, and admin status removed from localStorage.")
     }
 
     console.log("TournamentFinderClient: Logged out.")
@@ -280,6 +320,7 @@ export function TournamentFinderClient({
     try {
       const submissionData = {
         ...tournamentForm,
+        submittedBy: userIdentity || "",
         coordinates:
           tournamentForm.longitude && tournamentForm.latitude
             ? [parseFloat(tournamentForm.longitude), parseFloat(tournamentForm.latitude)]
@@ -312,7 +353,13 @@ export function TournamentFinderClient({
           rulesLink: "",
           longitude: "",
           latitude: "",
+          submittedBy: "",
         })
+        // Reload staged tournaments to show the new submission
+        if (authToken) {
+          const updatedStaged = await fetchStagedTournaments(authToken)
+          setStagedTournaments(updatedStaged)
+        }
       } else {
         alert(`Failed to submit tournament: ${data.message}`)
       }
@@ -321,6 +368,45 @@ export function TournamentFinderClient({
       alert("An error occurred while submitting the tournament.")
     } finally {
       setSubmitLoading(false)
+    }
+  }
+
+  const handleApproveTournament = async (tournamentId: number) => {
+    if (!isAdmin || !authToken) {
+      alert("Admin access required")
+      return
+    }
+
+    if (!confirm("Are you sure you want to approve this tournament? It will be published to the main list.")) {
+      return
+    }
+
+    try {
+      const response = await fetch("/api/tournaments/approve", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ tournamentId }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        alert("Tournament approved successfully!")
+        // Reload staged tournaments
+        const updatedStaged = await fetchStagedTournaments(authToken)
+        setStagedTournaments(updatedStaged)
+        // Reload main tournaments list
+        const updatedTournaments = await fetchTournaments()
+        setTournaments(updatedTournaments)
+      } else {
+        alert(`Failed to approve tournament: ${data.error || data.message}`)
+      }
+    } catch (error) {
+      console.error("Error approving tournament:", error)
+      alert("An error occurred while approving the tournament.")
     }
   }
 
@@ -806,6 +892,100 @@ export function TournamentFinderClient({
               </CardContent>
             </Card>
           </div>
+
+          {/* User Submitted Tournaments Card - Only visible when logged in */}
+          {isLoggedIn && (
+          <div className="lg:col-span-1">
+            <Card className="h-full border-amber-200 bg-amber-50/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-amber-800">
+                  <Plus className="w-5 h-5" />
+                  Your Submitted Tournaments ({stagedTournaments.length})
+                </CardTitle>
+                <p className="text-sm text-amber-600">
+                  These tournaments are pending review and will be published once verified.
+                </p>
+              </CardHeader>
+              <CardContent>
+                {stagedLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-amber-600" />
+                    <span className="ml-2 text-amber-700">Loading submitted tournaments...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {stagedTournaments.map((tournament) => (
+                      <Card key={tournament.id} className="bg-white border-amber-100">
+                        <CardContent className="p-4">
+                          <div className="flex gap-4">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-sm truncate">{tournament.name}</h3>
+                              {tournament.location && (
+                                <p className="text-xs text-gray-600 mt-1">📍 {tournament.location}</p>
+                              )}
+                              {tournament.date && (
+                                <p className="text-xs text-gray-600">
+                                  📅 {new Date(tournament.date).toLocaleDateString("en-US", {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  })}
+                                </p>
+                              )}
+                              {tournament.disciplines && tournament.disciplines.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {tournament.disciplines.map((d, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full"
+                                    >
+                                      {d.name} ({d.type})
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              {tournament.description && (
+                                <p className="text-xs text-gray-500 mt-2 line-clamp-2">
+                                  {tournament.description}
+                                </p>
+                              )}
+                              {tournament.submittedBy && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  👤 Submitted by: {tournament.submittedBy}
+                                </p>
+                              )}
+                              <div className="flex items-center justify-between mt-2">
+                                <p className="text-xs text-amber-600">
+                                  ⏳ Pending review
+                                </p>
+                                {isAdmin && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2 text-xs bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
+                                    onClick={() => handleApproveTournament(tournament.id)}
+                                  >
+                                    <Check className="w-3 h-3 mr-1" />
+                                    Confirm
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {stagedTournaments.length === 0 && (
+                      <div className="text-center py-8 text-amber-600">
+                        <p>No pending tournament submissions.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          )}
         </div>
       </main>
 

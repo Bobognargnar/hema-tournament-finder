@@ -65,6 +65,15 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
     router.push("/")
   }
 
+  // Ensure URL has a protocol prefix
+  const formatUrl = (url: string) => {
+    if (!url) return url
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url
+    }
+    return `https://${url}`
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <header className="bg-white shadow-sm border-b mb-8">
@@ -143,43 +152,56 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                   <p className="text-gray-700">{tournament.venueDetails}</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {tournament.registrationLink && (
-                    <div>
-                      <h3 className="font-semibold text-xl mb-2">Registration</h3>
-                      <Button asChild>
-                        <a href={tournament.registrationLink} target="_blank" rel="noopener noreferrer">
-                          <LinkIcon className="w-4 h-4 mr-2" />
-                          Register Now
-                        </a>
-                      </Button>
-                    </div>
-                  )}
-                  {tournament.rulesLink && (
-                    <div>
-                      <h3 className="font-semibold text-xl mb-2">Rules</h3>
-                      <Button asChild variant="outline">
-                        <a href={tournament.rulesLink} target="_blank" rel="noopener noreferrer">
-                          <BookOpen className="w-4 h-4 mr-2" />
-                          View Rules
-                        </a>
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {tournament.contactEmail && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <h3 className="font-semibold text-xl mb-2">Contact</h3>
-                    <a
-                      href={`mailto:${tournament.contactEmail}`}
-                      className="flex items-center gap-2 text-blue-600 hover:underline"
-                    >
-                      <Mail className="w-4 h-4" />
-                      {tournament.contactEmail}
-                    </a>
+                    <h3 className="font-semibold text-xl mb-2 flex items-center gap-2">
+                      <LinkIcon className="w-5 h-5" />
+                      Official Website
+                    </h3>
+                    {tournament.registrationLink ? (
+                      <Button asChild>
+                        <a href={formatUrl(tournament.registrationLink)} target="_blank" rel="noopener noreferrer">
+                          Go to site
+                        </a>
+                      </Button>
+                    ) : (
+                      <p className="text-gray-500 italic">Unavailable</p>
+                    )}
                   </div>
-                )}
+
+                  <div>
+                    <h3 className="font-semibold text-xl mb-2 flex items-center gap-2">
+                      <Mail className="w-5 h-5" />
+                      Contact Email
+                    </h3>
+                    {tournament.contactEmail ? (
+                      <a
+                        href={`mailto:${tournament.contactEmail}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {tournament.contactEmail}
+                      </a>
+                    ) : (
+                      <p className="text-gray-500 italic">Unavailable</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-xl mb-2 flex items-center gap-2">
+                      <BookOpen className="w-5 h-5" />
+                      Rules
+                    </h3>
+                    {tournament.rulesLink ? (
+                      <Button asChild variant="outline">
+                        <a href={formatUrl(tournament.rulesLink)} target="_blank" rel="noopener noreferrer">
+                          Go to site
+                        </a>
+                      </Button>
+                    ) : (
+                      <p className="text-gray-500 italic">Unavailable</p>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 

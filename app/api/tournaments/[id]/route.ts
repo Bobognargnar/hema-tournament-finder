@@ -1,36 +1,81 @@
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 import type { Tournament } from "@/types/tournament"
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const id = Number.parseInt(params.id)
-  const baseUrl = process.env.API_BASE_URL
+// GET - Fetch single tournament by ID from Supabase
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  const tournamentId = parseInt(id, 10)
 
-  if (!baseUrl) {
-    console.warn("API_BASE_URL not found")
-    return NextResponse.json({ error: "Tournament not found" }, { status: 404 })
+  if (isNaN(tournamentId)) {
+    return NextResponse.json({ error: "Invalid tournament ID" }, { status: 400 })
+  }
+
+  const apiBaseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL
+  const apiKey = process.env.API_KEY
+
+  if (!apiBaseUrl) {
+    console.error("API_BASE_URL not configured")
+    return NextResponse.json({ error: "API configuration error" }, { status: 500 })
+  }
+
+  if (!apiKey) {
+    console.error("API_KEY not configured")
+    return NextResponse.json({ error: "API configuration error" }, { status: 500 })
   }
 
   try {
-    const response = await fetch(`${baseUrl}/rest/v1/tournaments?id=eq.${id}`, {
+    console.log(`Fetching tournament ${tournamentId} from Supabase...`)
+
+    const response = await fetch(`${apiBaseUrl}/rest/v1/tournaments?id=eq.${tournamentId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        apikey: process.env.API_KEY || "",
+        "apikey": apiKey,
+        "Authorization": `Bearer ${apiKey}`,
       },
     })
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`)
+      const errorText = await response.text().catch(() => "")
+      console.error("Failed to fetch tournament:", response.status, errorText)
+      return NextResponse.json(
+        { error: `Failed to fetch tournament: ${response.status}` },
+        { status: response.status }
+      )
     }
 
-    const tournaments: Tournament[] = await response.json()
-    if (tournaments.length === 0) {
+    const rawTournaments = await response.json()
+
+    if (rawTournaments.length === 0) {
       return NextResponse.json({ error: "Tournament not found" }, { status: 404 })
     }
 
-    return NextResponse.json(tournaments[0])
+    // Transform snake_case to camelCase
+    const t = rawTournaments[0] as Record<string, unknown>
+    const tournament: Tournament = {
+      id: t.id as number,
+      name: t.name as string,
+      location: t.location as string,
+      date: t.date as string,
+      disciplines: t.disciplines as Tournament["disciplines"],
+      image: (t.image as string) || "/placeholder.svg",
+      coordinates: t.coordinates as [number, number],
+      description: t.description as string,
+      registrationLink: t.registration_link as string,
+      venueDetails: t.venue_details as string,
+      contactEmail: t.contact_email as string,
+      rulesLink: t.rules_link as string,
+      submittedBy: (t.submitted_by as string) || "",
+    }
+
+    console.log(`Fetched tournament: ${tournament.name}`)
+    return NextResponse.json(tournament)
   } catch (error) {
-    console.error("Failed to fetch tournament from API:", error)
-    return NextResponse.json({ error: "Tournament not found" }, { status: 404 })
+    console.error("Error fetching tournament:", error)
+    return NextResponse.json({ error: "Failed to fetch tournament" }, { status: 500 })
   }
 }

@@ -16,6 +16,7 @@ interface TournamentSubmission {
   contactEmail: string
   rulesLink: string
   coordinates?: [number, number]
+  submittedBy?: string
 }
 
 export async function POST(request: NextRequest) {
@@ -28,11 +29,28 @@ export async function POST(request: NextRequest) {
 
     const token = authHeader.substring(7)
 
-    // In a real implementation, you would verify the token here
-    // For now, we'll just check if it exists
+    // Decode JWT to extract user_id
     if (!token) {
       return NextResponse.json({ success: false, message: "Invalid token" }, { status: 401 })
     }
+
+    let userId: string
+    let userEmail: string
+    try {
+      // JWT is base64 encoded: header.payload.signature
+      const payloadBase64 = token.split('.')[1]
+      const payload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'))
+      userId = payload.sub
+      userEmail = payload.email || ""
+      if (!userId) {
+        throw new Error("No user ID in token")
+      }
+    } catch (error) {
+      console.error("Failed to decode JWT:", error)
+      return NextResponse.json({ success: false, message: "Invalid token format" }, { status: 401 })
+    }
+
+    console.log("User submitting tournament:", { userId, userEmail })
 
     const body: TournamentSubmission = await request.json()
 
@@ -52,7 +70,7 @@ export async function POST(request: NextRequest) {
       venueDetails: body.venueDetails?.substring(0, 100) + "...",
       contactEmail: body.contactEmail,
       rulesLink: body.rulesLink,
-      submittedBy: "user-from-token", // In real implementation, extract from token
+      submittedBy: userId,
       submittedAt: new Date().toISOString(),
     })
 
@@ -78,6 +96,8 @@ export async function POST(request: NextRequest) {
         contact_email: body.contactEmail,
         rules_link: body.rulesLink,
         coordinates: body.coordinates,
+        user_id: userId,
+        submitted_by: body.submittedBy || userEmail,
       }
 
       // Make fetch POST request to the external API

@@ -18,6 +18,7 @@ export interface Tournament {
   venueDetails: string
   contactEmail: string
   rulesLink: string
+  submittedBy?: string
 }
 
 export interface TournamentFilters {
