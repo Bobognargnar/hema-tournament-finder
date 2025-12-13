@@ -249,12 +249,18 @@ const loginForm = ref({
 const disciplineOptions = [
   'Longsword',
   'Rapier',
+  'Rapier & Dagger',
   'Sabre',
   'Smallsword',
   'Dagger',
   'Sword & Buckler',
   'Messer',
-  'Polearms'
+  'Polearms',
+  'Sidesword',
+  'Sidesword & Buckler',
+  'Sidesword & Dagger',
+  'Sidesword & Rotella',
+  
 ]
 
 // Mock API data
