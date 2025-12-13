@@ -96,8 +96,11 @@ export function TournamentFinderClient({
     submittedBy: "",
   })
   const [showLoginDialog, setShowLoginDialog] = useState(false)
+  const [showSignupDialog, setShowSignupDialog] = useState(false)
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
   const [showAuthPromptDialog, setShowAuthPromptDialog] = useState(false)
+  const [signupForm, setSignupForm] = useState({ email: "", password: "", confirmPassword: "" })
+  const [signupLoading, setSignupLoading] = useState(false)
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -307,6 +310,69 @@ export function TournamentFinderClient({
     }
 
     console.log("TournamentFinderClient: Logged out.")
+  }
+
+  const handleSignup = async () => {
+    console.log("TournamentFinderClient: handleSignup called.")
+    if (!signupForm.email || !signupForm.password) {
+      alert("Please enter both email and password.")
+      return
+    }
+
+    if (signupForm.password !== signupForm.confirmPassword) {
+      alert("Passwords do not match.")
+      return
+    }
+
+    if (signupForm.password.length < 6) {
+      alert("Password must be at least 6 characters.")
+      return
+    }
+
+    setSignupLoading(true)
+    try {
+      const response = await fetch("/api/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: signupForm.email,
+          password: signupForm.password,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        if (data.requiresConfirmation) {
+          alert(data.message)
+          setShowSignupDialog(false)
+          setSignupForm({ email: "", password: "", confirmPassword: "" })
+        } else {
+          // Auto-confirmed, log the user in
+          setAuthToken(data.token)
+          setUserIdentity(data.identity)
+          setIsLoggedIn(true)
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem("authToken", data.token)
+            localStorage.setItem("userIdentity", data.identity)
+          }
+
+          setShowSignupDialog(false)
+          setSignupForm({ email: "", password: "", confirmPassword: "" })
+          alert("Registration successful! You are now logged in.")
+        }
+      } else {
+        alert(`Registration failed: ${data.message}`)
+      }
+    } catch (error) {
+      console.error("TournamentFinderClient: Error during signup:", error)
+      alert("An error occurred during registration.")
+    } finally {
+      setSignupLoading(false)
+    }
   }
 
   const handleSubmitTournament = async () => {
@@ -745,73 +811,159 @@ export function TournamentFinderClient({
                   </Button>
                 </>
               ) : (
-                <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2">
-                      <LogIn className="w-4 h-4" />
-                      Login
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Login</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={loginForm.email}
-                          onChange={(e) =>
-                            setLoginForm({
-                              ...loginForm,
-                              email: e.target.value,
-                            })
-                          }
-                          disabled={loginLoading}
-                          placeholder="Enter your email"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          value={loginForm.password}
-                          onChange={(e) =>
-                            setLoginForm({
-                              ...loginForm,
-                              password: e.target.value,
-                            })
-                          }
-                          disabled={loginLoading}
-                          placeholder="Enter your password"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !loginLoading) {
-                              handleLogin()
+                <>
+                  <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" className="flex items-center gap-2">
+                        <LogIn className="w-4 h-4" />
+                        Login
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Login</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="email">Email</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={loginForm.email}
+                            onChange={(e) =>
+                              setLoginForm({
+                                ...loginForm,
+                                email: e.target.value,
+                              })
                             }
-                          }}
-                        />
+                            disabled={loginLoading}
+                            placeholder="Enter your email"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="password">Password</Label>
+                          <Input
+                            id="password"
+                            type="password"
+                            value={loginForm.password}
+                            onChange={(e) =>
+                              setLoginForm({
+                                ...loginForm,
+                                password: e.target.value,
+                              })
+                            }
+                            disabled={loginLoading}
+                            placeholder="Enter your password"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !loginLoading) {
+                                handleLogin()
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" onClick={() => setShowLoginDialog(false)} disabled={loginLoading}>
+                            Cancel
+                          </Button>
+                          <Button onClick={handleLogin} disabled={loginLoading}>
+                            {loginLoading ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                Logging in...
+                              </>
+                            ) : (
+                              "Login"
+                            )}
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setShowLoginDialog(false)} disabled={loginLoading}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleLogin} disabled={loginLoading}>
-                          {loginLoading ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                              Logging in...
-                            </>
-                          ) : (
-                            "Login"
-                          )}
-                        </Button>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Dialog open={showSignupDialog} onOpenChange={setShowSignupDialog}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        Sign Up
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Create Account</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="signup-email">Email</Label>
+                          <Input
+                            id="signup-email"
+                            type="email"
+                            value={signupForm.email}
+                            onChange={(e) =>
+                              setSignupForm({
+                                ...signupForm,
+                                email: e.target.value,
+                              })
+                            }
+                            disabled={signupLoading}
+                            placeholder="Enter your email"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="signup-password">Password</Label>
+                          <Input
+                            id="signup-password"
+                            type="password"
+                            value={signupForm.password}
+                            onChange={(e) =>
+                              setSignupForm({
+                                ...signupForm,
+                                password: e.target.value,
+                              })
+                            }
+                            disabled={signupLoading}
+                            placeholder="Enter your password (min 6 characters)"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                          <Input
+                            id="signup-confirm-password"
+                            type="password"
+                            value={signupForm.confirmPassword}
+                            onChange={(e) =>
+                              setSignupForm({
+                                ...signupForm,
+                                confirmPassword: e.target.value,
+                              })
+                            }
+                            disabled={signupLoading}
+                            placeholder="Confirm your password"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !signupLoading) {
+                                handleSignup()
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" onClick={() => setShowSignupDialog(false)} disabled={signupLoading}>
+                            Cancel
+                          </Button>
+                          <Button onClick={handleSignup} disabled={signupLoading}>
+                            {signupLoading ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                Creating account...
+                              </>
+                            ) : (
+                              "Sign Up"
+                            )}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                    </DialogContent>
+                  </Dialog>
+                </>
               )}
             </div>
           </div>
