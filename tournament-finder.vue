@@ -245,23 +245,8 @@ const loginForm = ref({
   password: ''
 })
 
-// Discipline options for filter
-const disciplineOptions = [
-  'Longsword',
-  'Rapier',
-  'Rapier & Dagger',
-  'Sabre',
-  'Smallsword',
-  'Dagger',
-  'Sword & Buckler',
-  'Messer',
-  'Polearms',
-  'Sidesword',
-  'Sidesword & Buckler',
-  'Sidesword & Dagger',
-  'Sidesword & Rotella',
-  
-]
+// Discipline options for filter - imported from shared source
+import { disciplineOptions } from '@/shared/disciplines'
 
 // Mock API data
 const mockTournaments = [

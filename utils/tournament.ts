@@ -1,15 +1,5 @@
 import type { TournamentType } from "@/types/tournament"
-
-export const disciplineOptions = [
-  "Longsword",
-  "Rapier",
-  "Sabre",
-  "Smallsword",
-  "Dagger",
-  "Sword & Buckler",
-  "Messer",
-  "Polearms",
-]
+export { disciplineOptions } from "@/shared/disciplines"
 
 export const tournamentTypeOptions: TournamentType[] = ["Male", "Female", "Open", "Other"]
 
