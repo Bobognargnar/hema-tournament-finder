@@ -9,6 +9,7 @@ interface TournamentSubmission {
   name: string
   location: string
   date: string
+  dateTo: string
   disciplines: DisciplineRow[]
   description: string
   registrationLink: string
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest) {
         name: body.name,
         location: body.location,
         date: body.date,
+        date_to: body.dateTo || body.date, // Default to start date if not set
         disciplines: body.disciplines,
         description: body.description,
         registration_link: body.registrationLink,

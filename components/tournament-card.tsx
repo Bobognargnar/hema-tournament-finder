@@ -86,7 +86,12 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
 
                 <div className="flex items-center gap-1 text-xs text-gray-600 mb-2">
                   <Calendar className="w-3 h-3" />
-                  <span>{formatDate(tournament.date)}</span>
+                  <span>
+                    {formatDate(tournament.date)}
+                    {tournament.dateTo && tournament.dateTo !== tournament.date && (
+                      <> - {formatDate(tournament.dateTo)}</>
+                    )}
+                  </span>
                 </div>
 
                 <div className="flex flex-wrap gap-1">

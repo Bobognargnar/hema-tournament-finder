@@ -51,6 +51,7 @@ export async function GET() {
         name: t.name,
         location: t.location,
         date: t.date,
+        dateTo: t.date_to || t.date, // Default to start date if not set
         disciplines: t.disciplines,
         image: t.image || "/placeholder.svg",
         coordinates: coords,

@@ -5,6 +5,7 @@ interface StagedTournament {
   name: string
   location: string
   date: string
+  date_to: string
   disciplines: { name: string; type: "Male" | "Female" | "Open" | "Other" }[]
   description: string
   registration_link: string
@@ -74,6 +75,7 @@ export async function GET(request: NextRequest) {
       name: t.name,
       location: t.location || "",
       date: t.date || "",
+      dateTo: t.date_to || t.date || "", // Default to start date if not set
       disciplines: t.disciplines || [],
       description: t.description || "",
       registrationLink: t.registration_link || "",

@@ -66,6 +66,7 @@ export async function GET(
       name: t.name as string,
       location: t.location as string,
       date: t.date as string,
+      dateTo: (t.date_to as string) || (t.date as string), // Default to start date if not set
       disciplines: t.disciplines as Tournament["disciplines"],
       image: (t.image as string) || "/placeholder.svg",
       coordinates: coords as [number, number],

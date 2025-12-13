@@ -9,7 +9,8 @@ export interface Tournament {
   id: number
   name: string
   location: string
-  date: string
+  date: string // Start date
+  dateTo: string // End date
   disciplines: DisciplineDetail[] // Changed to array of DisciplineDetail objects
   image: string
   coordinates: [number, number]

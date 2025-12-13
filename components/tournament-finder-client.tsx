@@ -44,6 +44,7 @@ interface TournamentSubmission {
   name: string
   location: string
   date: string
+  dateTo: string
   disciplines: DisciplineRow[]
   description: string
   registrationLink: string
@@ -85,6 +86,7 @@ export function TournamentFinderClient({
     name: "",
     location: "",
     date: "",
+    dateTo: "",
     disciplines: [],
     description: "",
     registrationLink: "",
@@ -166,20 +168,20 @@ export function TournamentFinderClient({
     const filterStartDate = filters.startDate ? new Date(filters.startDate) : null
     const filterEndDate = filters.endDate ? new Date(filters.endDate) : null
 
-    if (filterStartDate) {
+    // Filter by date range - include tournaments that fall even partially in the range
+    // A tournament overlaps if: tournament.date <= filterEndDate AND tournament.dateTo >= filterStartDate
+    if (filterStartDate || filterEndDate) {
       filtered = filtered.filter((t) => {
-        const tournamentDate = new Date(t.date)
-        return tournamentDate.getTime() >= filterStartDate.getTime()
+        const tournamentStart = new Date(t.date)
+        const tournamentEnd = new Date(t.dateTo || t.date) // Default to start date if no end date
+        
+        // Check if tournament overlaps with filter range
+        const startsBeforeFilterEnds = !filterEndDate || tournamentStart.getTime() <= filterEndDate.getTime()
+        const endsAfterFilterStarts = !filterStartDate || tournamentEnd.getTime() >= filterStartDate.getTime()
+        
+        return startsBeforeFilterEnds && endsAfterFilterStarts
       })
-      console.log("TournamentFinderClient: Filtered by start date. Count:", filtered.length)
-    }
-
-    if (filterEndDate) {
-      filtered = filtered.filter((t) => {
-        const tournamentDate = new Date(t.date)
-        return tournamentDate.getTime() <= filterEndDate.getTime()
-      })
-      console.log("TournamentFinderClient: Filtered by end date. Count:", filtered.length)
+      console.log("TournamentFinderClient: Filtered by date range (partial overlap). Count:", filtered.length)
     }
 
     if (filters.disciplines.length > 0) {
@@ -424,7 +426,11 @@ export function TournamentFinderClient({
       return
     }
     if (!tournamentForm.date) {
-      alert("Date is required.")
+      alert("Start date is required.")
+      return
+    }
+    if (!tournamentForm.dateTo) {
+      alert("End date is required.")
       return
     }
     if (tournamentForm.disciplines.length === 0) {
@@ -485,6 +491,7 @@ export function TournamentFinderClient({
           name: "",
           location: "",
           date: "",
+          dateTo: "",
           disciplines: [],
           description: "",
           registrationLink: "",
@@ -748,15 +755,42 @@ export function TournamentFinderClient({
                           )}
                         </div>
 
-                        <div>
-                          <Label htmlFor="tournament-date">Date *</Label>
-                          <Input
-                            id="tournament-date"
-                            type="date"
-                            value={tournamentForm.date}
-                            onChange={(e) => setTournamentForm({ ...tournamentForm, date: e.target.value })}
-                            disabled={submitLoading}
-                          />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="tournament-date">Start Date *</Label>
+                            <Input
+                              id="tournament-date"
+                              type="date"
+                              value={tournamentForm.date}
+                              onChange={(e) => {
+                                const newDate = e.target.value
+                                // If end date is set and is less than new start date, update it
+                                const newDateTo = tournamentForm.dateTo && tournamentForm.dateTo < newDate 
+                                  ? newDate 
+                                  : tournamentForm.dateTo
+                                setTournamentForm({ ...tournamentForm, date: newDate, dateTo: newDateTo })
+                              }}
+                              disabled={submitLoading}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="tournament-date-to">End Date *</Label>
+                            <Input
+                              id="tournament-date-to"
+                              type="date"
+                              value={tournamentForm.dateTo}
+                              min={tournamentForm.date || undefined}
+                              onChange={(e) => {
+                                let newDateTo = e.target.value
+                                // If end date is less than start date, set it to start date
+                                if (tournamentForm.date && newDateTo < tournamentForm.date) {
+                                  newDateTo = tournamentForm.date
+                                }
+                                setTournamentForm({ ...tournamentForm, dateTo: newDateTo })
+                              }}
+                              disabled={submitLoading}
+                            />
+                          </div>
                         </div>
 
                         <div>
@@ -1178,6 +1212,13 @@ export function TournamentFinderClient({
                                     month: "long",
                                     day: "numeric",
                                   })}
+                                  {tournament.dateTo && tournament.dateTo !== tournament.date && (
+                                    <> - {new Date(tournament.dateTo).toLocaleDateString("en-US", {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                    })}</>
+                                  )}
                                 </p>
                               )}
                               {tournament.disciplines && tournament.disciplines.length > 0 && (

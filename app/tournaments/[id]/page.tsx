@@ -121,7 +121,12 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                 </div>
                 <div className="flex items-center gap-2 text-gray-600 text-lg">
                   <Calendar className="w-5 h-5" />
-                  <span>{formatDate(tournament.date)}</span>
+                  <span>
+                    {formatDate(tournament.date)}
+                    {tournament.dateTo && tournament.dateTo !== tournament.date && (
+                      <> - {formatDate(tournament.dateTo)}</>
+                    )}
+                  </span>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">

@@ -5,6 +5,7 @@ export interface StagedTournament {
   name: string
   location: string
   date: string
+  dateTo: string
   disciplines: { name: string; type: "Male" | "Female" | "Open" | "Other" }[]
   description: string
   registrationLink: string
