@@ -574,26 +574,30 @@ export function TournamentFinderClient({
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <Sword className="w-8 h-8 text-blue-600" />
-              <h1 className="text-xl font-bold text-gray-900">HEMA Tournament Finder</h1>
+          <div className="flex items-center justify-between py-3 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Sword className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
+              <h1 className="text-base sm:text-xl font-bold text-gray-900 truncate">
+                <span className="hidden sm:inline">HEMA Tournament Finder</span>
+                <span className="sm:hidden">HEMA Finder</span>
+              </h1>
             </div>
             {/* Login/Logout Section in Header */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1 sm:gap-4 flex-shrink-0">
               {isLoggedIn ? (
                 <>
                   {userIdentity && (
-                    <div className="flex items-center gap-2 text-gray-700">
+                    <div className="hidden md:flex items-center gap-2 text-gray-700">
                       <User className="w-4 h-4" />
-                      <span>Hello, {userIdentity}</span>
+                      <span className="text-sm">Hello, {userIdentity}</span>
                     </div>
                   )}
                   <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" className="flex items-center gap-2 bg-transparent">
+                      <Button variant="outline" size="sm" className="flex items-center gap-1 sm:gap-2 bg-transparent text-xs sm:text-sm">
                         <Plus className="w-4 h-4" />
-                        Submit a Tournament
+                        <span className="hidden sm:inline">Submit a Tournament</span>
+                        <span className="sm:hidden">Submit</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -805,18 +809,18 @@ export function TournamentFinderClient({
                       </div>
                     </DialogContent>
                   </Dialog>
-                  <Button variant="ghost" className="flex items-center gap-2" onClick={handleLogout}>
+                  <Button variant="ghost" size="sm" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm" onClick={handleLogout}>
                     <LogOut className="w-4 h-4" />
-                    Logout
+                    <span className="hidden sm:inline">Logout</span>
                   </Button>
                 </>
               ) : (
                 <>
                   <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
                     <DialogTrigger asChild>
-                      <Button variant="ghost" className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                         <LogIn className="w-4 h-4" />
-                        Login
+                        <span className="hidden sm:inline">Login</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
@@ -882,9 +886,9 @@ export function TournamentFinderClient({
 
                   <Dialog open={showSignupDialog} onOpenChange={setShowSignupDialog}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                         <User className="w-4 h-4" />
-                        Sign Up
+                        <span className="hidden sm:inline">Sign Up</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
