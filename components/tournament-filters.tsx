@@ -1,7 +1,6 @@
 "use client"
 
 import type { TournamentFilters, TournamentType } from "@/types/tournament"
-import { getTournamentTypeColor } from "@/utils/tournament" // Corrected import path
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -148,11 +147,8 @@ export function TournamentFiltersComponent({
             {tournamentTypeOptions.map((type) => (
               <Badge
                 key={type}
-                className={`cursor-pointer text-xs px-2 py-1 ${
-                  filters.selectedTypes.includes(type)
-                    ? getTournamentTypeColor(type)
-                    : "bg-gray-100 text-gray-800 border border-gray-200"
-                }`}
+                variant={filters.selectedTypes.includes(type) ? "default" : "outline"}
+                className="cursor-pointer text-xs px-2 py-1"
                 onClick={() => handleTypeToggle(type)}
               >
                 {type}

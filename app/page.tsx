@@ -1,5 +1,5 @@
 "use client"
-import { fetchTournaments } from "@/api/tournaments"
+import { fetchTournaments } from "@/lib/tournaments"
 import { TournamentFinderClient } from "@/components/tournament-finder-client"
 import { useEffect, useState } from "react" // Import useEffect and useState
 

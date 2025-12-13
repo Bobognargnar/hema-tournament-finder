@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Calendar, MapPin, LinkIcon, Mail, BookOpen, Loader2 } from "lucide-react"
-import { fetchTournamentById } from "@/api/tournaments" // Updated import path
+import { fetchTournamentById } from "@/lib/tournaments"
 import type { Tournament, DisciplineDetail } from "@/types/tournament"
 import { OpenLayersMap } from "@/components/OpenLayersMap" // Updated import path and casing
 import { useRouter } from "next/navigation"
