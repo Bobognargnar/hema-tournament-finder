@@ -699,6 +699,8 @@ export function TournamentFinderClient({
                         <DialogTitle>Submit a Tournament</DialogTitle>
                         <DialogDescription>
                           Share your tournament with the HEMA community. All fields are required.
+                          <br />
+                          If later you need to update the tournament, please contact the administrator.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
