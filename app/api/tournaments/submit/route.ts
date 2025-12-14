@@ -149,6 +149,49 @@ export async function POST(request: NextRequest) {
 
       console.log("Tournament submitted successfully to external API:", responseData)
 
+      // Call edge function to send notification email
+      const emailEdgeUrl = process.env.EMAIL_EDGE_URL
+
+      if (emailEdgeUrl) {
+        try {
+          const notificationBody = {
+            subject: `New tournament submitted: ${body.name}`,
+            message: `A new tournament has been submitted for review.\n\n` +
+              `Name: ${body.name}\n` +
+              `Location: ${body.location}\n` +
+              `Date: ${body.date}${body.dateTo && body.dateTo !== body.date ? ` - ${body.dateTo}` : ''}\n` +
+              `Disciplines: ${body.disciplines.map(d => `${d.name} (${d.type})`).join(', ')}\n` +
+              `Description: ${body.description || 'N/A'}\n` +
+              `Registration Link: ${body.registrationLink || 'N/A'}\n` +
+              `Contact Email: ${body.contactEmail || 'N/A'}\n` +
+              `Rules Link: ${body.rulesLink || 'N/A'}\n` +
+              `Venue Details: ${body.venueDetails || 'N/A'}\n` +
+              `Submitted By: ${body.submittedBy || userEmail}\n` +
+              `Coordinates: ${body.coordinates ? `[${body.coordinates[0]}, ${body.coordinates[1]}]` : 'N/A'}`
+          }
+
+          const emailResponse = await fetch(emailEdgeUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify(notificationBody),
+          })
+
+          if (emailResponse.ok) {
+            console.log("Notification email sent successfully")
+          } else {
+            console.warn("Failed to send notification email:", emailResponse.status, emailResponse.statusText)
+          }
+        } catch (emailError) {
+          // Don't fail the submission if email notification fails
+          console.error("Error sending notification email:", emailError)
+        }
+      } else {
+        console.log("Email notification skipped: EMAIL_EDGE_URL not configured")
+      }
+
       return NextResponse.json({
         success: true,
         message: "Tournament submitted successfully! It will be reviewed before being published.",

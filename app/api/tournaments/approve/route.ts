@@ -109,7 +109,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to approve tournament" }, { status: insertResponse.status })
     }
 
-    // Step 3: Delete from staged_tournaments
+    // Step 3: Send email notification to user (only after successful Supabase verification)
+    const emailEdgeUrl = process.env.EMAIL_USER_EDGE_URL
+    if (emailEdgeUrl && staged.submitted_by) {
+      try {
+        const disciplines = staged.disciplines?.map((d: { name: string; type: string }) => 
+          `${d.name} (${d.type})`
+        ).join(', ') || 'N/A'
+
+        const notificationBody = {
+          to: staged.submitted_by,
+          subject: `Your HEMA tournament has been approved: ${staged.name}`,
+          message: `Great news! Your tournament submission has been approved and is now live.\n\n` +
+            `Tournament Details:\n` +
+            `Name: ${staged.name}\n` +
+            `Location: ${staged.location}\n` +
+            `Date: ${staged.date}${staged.date_to && staged.date_to !== staged.date ? ` - ${staged.date_to}` : ''}\n` +
+            `Disciplines: ${disciplines}\n\n` +
+            `Thank you for contributing to the HEMA community!`
+        }
+
+        const emailResponse = await fetch(emailEdgeUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(notificationBody),
+        })
+
+        if (emailResponse.ok) {
+          console.log("User notification email sent successfully to:", staged.submitted_by)
+        } else {
+          console.warn("Failed to send user notification email:", emailResponse.status, emailResponse.statusText)
+        }
+      } catch (emailError) {
+        // Don't fail the approval if email notification fails
+        console.error("Error sending user notification email:", emailError)
+      }
+    }
+
+    // Step 4: Delete from staged_tournaments
     const deleteResponse = await fetch(`${apiBaseUrl}/rest/v1/staged_tournaments?id=eq.${tournamentId}`, {
       method: "DELETE",
       headers: {
