@@ -458,18 +458,7 @@ export function TournamentFinderClient({
       alert("Registration link is required.")
       return
     }
-    if (!tournamentForm.venueDetails.trim()) {
-      alert("Venue details are required.")
-      return
-    }
-    if (!tournamentForm.contactEmail.trim()) {
-      alert("Contact email is required.")
-      return
-    }
-    if (!tournamentForm.rulesLink.trim()) {
-      alert("Rules link is required.")
-      return
-    }
+    // venueDetails, contactEmail, and rulesLink are optional
     if (!tournamentForm.longitude || !tournamentForm.latitude) {
       alert("Coordinates are required. Please enter a location and wait for geocoding, or enter coordinates manually.")
       return
@@ -897,7 +886,7 @@ export function TournamentFinderClient({
                         </div>
 
                         <div>
-                          <Label htmlFor="tournament-venue">Venue Details *</Label>
+                          <Label htmlFor="tournament-venue">Venue Details (optional)</Label>
                           <Textarea
                             id="tournament-venue"
                             value={tournamentForm.venueDetails}
@@ -909,7 +898,7 @@ export function TournamentFinderClient({
                         </div>
 
                         <div>
-                          <Label htmlFor="tournament-contact">Contact Email *</Label>
+                          <Label htmlFor="tournament-contact">Contact Email (optional)</Label>
                           <Input
                             id="tournament-contact"
                             type="email"
@@ -921,7 +910,7 @@ export function TournamentFinderClient({
                         </div>
 
                         <div>
-                          <Label htmlFor="tournament-rules">Rules Link *</Label>
+                          <Label htmlFor="tournament-rules">Rules Link (optional)</Label>
                           <Input
                             id="tournament-rules"
                             type="url"
@@ -1202,7 +1191,8 @@ export function TournamentFinderClient({
                         if (isPastA && !isPastB) return 1
                         if (!isPastA && isPastB) return -1
                         
-                        // Within same group, sort by date (earliest first)
+                        // Upcoming: sort by date ascending (closest to today first)
+                        // Past: sort by date ascending (most recent past first)
                         return dateA.getTime() - dateB.getTime()
                       })
                       .map((tournament) => (
