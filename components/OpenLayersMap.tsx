@@ -57,7 +57,7 @@ export function OpenLayersMap({ tournaments, initialZoom = 2, initialCenter }: O
 
     if (initialCenter) {
       center = fromLonLat(initialCenter)
-      zoom = Math.max(initialZoom, 4) // A reasonable zoom for a country
+      zoom = initialZoom // A reasonable zoom for a country
     } else if (tournaments && tournaments.length > 0) {
       center = fromLonLat(tournaments[0].coordinates)
       zoom = Math.max(initialZoom, 8) // Zoom in more if a specific tournament is provided
@@ -175,10 +175,27 @@ export function OpenLayersMap({ tournaments, initialZoom = 2, initialCenter }: O
   useEffect(() => {
     if (vectorSource.current) {
       vectorSource.current.clear()
+      const today = new Date()
+      today.setHours(0, 0, 0, 0) // Start of today for comparison
+      
       tournaments.forEach((tournament) => {
         if (!tournament.coordinates || !Array.isArray(tournament.coordinates) || tournament.coordinates.length !== 2) {
           return
         }
+        
+        // Check if tournament start date is in the past
+        const tournamentDate = new Date(tournament.date)
+        const isPast = tournamentDate < today
+        
+        // Yellow pin SVG for past tournaments, blue for upcoming
+        const pinColor = isPast ? '#EAB308' : '#3B82F6' // yellow-500 : blue-500
+        const pinSvg = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32">
+            <path fill="${pinColor}" stroke="#1F2937" stroke-width="1" d="M12 0C7.58 0 4 3.58 4 8c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8z"/>
+            <circle fill="white" cx="12" cy="8" r="3"/>
+          </svg>
+        `
+        const pinDataUrl = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(pinSvg)
         
         const marker = new Feature({
           geometry: new Point(fromLonLat(tournament.coordinates)),
@@ -187,8 +204,8 @@ export function OpenLayersMap({ tournaments, initialZoom = 2, initialCenter }: O
           new Style({
             image: new Icon({
               anchor: [0.5, 1], // Anchor at the bottom center of the icon
-              src: "https://openlayers.org/en/latest/examples/data/icon.png", // Default OpenLayers marker icon
-              scale: 0.7,
+              src: pinDataUrl,
+              scale: 1,
             }),
           }),
         )

@@ -95,24 +95,34 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
                 </div>
 
                 <div className="flex flex-wrap gap-1">
-                  {tournament.disciplines.map((discipline: DisciplineDetail, index: number) => {
-                    const colorStyle = {
-                      Male: { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' },
-                      Female: { backgroundColor: '#fce7f3', color: '#9d174d', borderColor: '#fbcfe8' },
-                      Open: { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' },
-                      Other: { backgroundColor: '#f3e8ff', color: '#6b21a8', borderColor: '#e9d5ff' },
-                    }[discipline.type] || { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' }
-                    
-                    return (
-                      <span
-                        key={`${discipline.name}-${discipline.type}-${index}`}
-                        className="text-xs px-2 py-0.5 rounded-full border"
-                        style={colorStyle}
-                      >
-                        {discipline.name} ({discipline.type})
-                      </span>
-                    )
-                  })}
+                  {[...tournament.disciplines]
+                    .sort((a, b) => {
+                      // Sort by type order: Open, Male, Female, Other
+                      const typeOrder = { Open: 0, Male: 1, Female: 2, Other: 3 }
+                      const typeA = typeOrder[a.type as keyof typeof typeOrder] ?? 4
+                      const typeB = typeOrder[b.type as keyof typeof typeOrder] ?? 4
+                      if (typeA !== typeB) return typeA - typeB
+                      // Within same type, sort alphabetically by name
+                      return a.name.localeCompare(b.name)
+                    })
+                    .map((discipline: DisciplineDetail, index: number) => {
+                      const colorStyle = {
+                        Male: { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' },
+                        Female: { backgroundColor: '#fce7f3', color: '#9d174d', borderColor: '#fbcfe8' },
+                        Open: { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' },
+                        Other: { backgroundColor: '#f3e8ff', color: '#6b21a8', borderColor: '#e9d5ff' },
+                      }[discipline.type] || { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' }
+                      
+                      return (
+                        <span
+                          key={`${discipline.name}-${discipline.type}-${index}`}
+                          className="text-xs px-2 py-0.5 rounded-full border"
+                          style={colorStyle}
+                        >
+                          {discipline.name} ({discipline.type})
+                        </span>
+                      )
+                    })}
                 </div>
               </div>
             </div>

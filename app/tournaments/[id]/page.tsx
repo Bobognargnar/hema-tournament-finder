@@ -132,24 +132,34 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
               <CardContent className="space-y-6">
                 <div className="flex flex-wrap gap-2">
                   {tournament.disciplines && tournament.disciplines.length > 0 ? (
-                    tournament.disciplines.map((discipline: DisciplineDetail, index: number) => {
-                      const colorStyle = {
-                        Male: { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' },
-                        Female: { backgroundColor: '#fce7f3', color: '#9d174d', borderColor: '#fbcfe8' },
-                        Open: { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' },
-                        Other: { backgroundColor: '#f3e8ff', color: '#6b21a8', borderColor: '#e9d5ff' },
-                      }[discipline.type] || { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' }
-                      
-                      return (
-                        <span
-                          key={`${discipline.name}-${discipline.type}-${index}`}
-                          className="px-3 py-1 text-base rounded-full border"
-                          style={colorStyle}
-                        >
-                          {discipline.name} ({discipline.type})
-                        </span>
-                      )
-                    })
+                    [...tournament.disciplines]
+                      .sort((a, b) => {
+                        // Sort by type order: Open, Male, Female, Other
+                        const typeOrder = { Open: 0, Male: 1, Female: 2, Other: 3 }
+                        const typeA = typeOrder[a.type as keyof typeof typeOrder] ?? 4
+                        const typeB = typeOrder[b.type as keyof typeof typeOrder] ?? 4
+                        if (typeA !== typeB) return typeA - typeB
+                        // Within same type, sort alphabetically by name
+                        return a.name.localeCompare(b.name)
+                      })
+                      .map((discipline: DisciplineDetail, index: number) => {
+                        const colorStyle = {
+                          Male: { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' },
+                          Female: { backgroundColor: '#fce7f3', color: '#9d174d', borderColor: '#fbcfe8' },
+                          Open: { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' },
+                          Other: { backgroundColor: '#f3e8ff', color: '#6b21a8', borderColor: '#e9d5ff' },
+                        }[discipline.type] || { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' }
+                        
+                        return (
+                          <span
+                            key={`${discipline.name}-${discipline.type}-${index}`}
+                            className="px-3 py-1 text-base rounded-full border"
+                            style={colorStyle}
+                          >
+                            {discipline.name} ({discipline.type})
+                          </span>
+                        )
+                      })
                   ) : (
                     <p className="text-gray-500 italic">No disciplines listed for this tournament.</p>
                   )}

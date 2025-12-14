@@ -28,8 +28,8 @@ export default function TournamentFinderPage() {
   }, [])
 
   // Default to central Europe for an unzoomed world view
-  const initialMapCenter: [number, number] = [10, 54] // Longitude, Latitude for central Europe
-  const initialMapZoom: number = 3 // A low zoom level for a world view
+  const initialMapCenter: [number, number] = [10, 50] // Longitude, Latitude for central Europe
+  const initialMapZoom: number = 4// A low zoom level for a world view
 
   console.log(
     "app/page.tsx: Rendering TournamentFinderClient with initialMapCenter:",
