@@ -1189,7 +1189,23 @@ export function TournamentFinderClient({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {filteredTournaments.map((tournament) => (
+                    {[...filteredTournaments]
+                      .sort((a, b) => {
+                        const today = new Date()
+                        today.setHours(0, 0, 0, 0)
+                        const dateA = new Date(a.date)
+                        const dateB = new Date(b.date)
+                        const isPastA = dateA < today
+                        const isPastB = dateB < today
+                        
+                        // Past tournaments go to the bottom
+                        if (isPastA && !isPastB) return 1
+                        if (!isPastA && isPastB) return -1
+                        
+                        // Within same group, sort by date (earliest first)
+                        return dateA.getTime() - dateB.getTime()
+                      })
+                      .map((tournament) => (
                       <TournamentCard
                         key={tournament.id}
                         tournament={tournament}

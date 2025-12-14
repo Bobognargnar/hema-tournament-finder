@@ -16,6 +16,12 @@ interface TournamentCardProps {
 export default function TournamentCard({ tournament, isFavorite, onToggleFavorite }: TournamentCardProps) {
   const [showAuthPrompt, setShowAuthPrompt] = useState(false) // This state is not used in this component, but kept for consistency with previous versions.
 
+  // Check if tournament start date is in the past
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tournamentDate = new Date(tournament.date)
+  const isPast = tournamentDate < today
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString("en-US", {
@@ -43,7 +49,7 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
   return (
     <div onClick={handleCardClick}>
       <Link href={`/tournaments/${tournament.id}`} passHref>
-        <Card className="cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+        <Card className={`cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 ${isPast ? 'bg-yellow-50 border-yellow-200' : ''}`}>
           <CardContent className="p-4">
             <div className="flex gap-4">
               <div className="w-24 h-20 flex-shrink-0">
