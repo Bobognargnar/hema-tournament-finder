@@ -13,5 +13,5 @@ export const disciplineOptions = [
   "Sidesword & Buckler",
   "Sidesword & Dagger",
   "Sidesword & Rotella",
-]
+].sort()
 

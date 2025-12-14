@@ -22,7 +22,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Sword, Map, LogIn, Loader2, LogOut, User, Plus, Trash2, Check, MapPin } from "lucide-react"
+import { Sword, Map, LogIn, Loader2, LogOut, User, Plus, Trash2, Check, MapPin, ChevronDown, ChevronUp, Filter } from "lucide-react"
 
 interface UserData {
   name: string
@@ -104,6 +104,7 @@ export function TournamentFinderClient({
   const [signupForm, setSignupForm] = useState({ email: "", password: "", confirmPassword: "" })
   const [signupLoading, setSignupLoading] = useState(false)
   const [geocodingLoading, setGeocodingLoading] = useState(false)
+  const [filtersCollapsed, setFiltersCollapsed] = useState(true) // Collapsed by default on mobile
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -206,6 +207,18 @@ export function TournamentFinderClient({
     console.log("TournamentFinderClient: Final filteredTournaments count:", filtered.length)
     return filtered
   }, [tournaments, filters, userData])
+
+  // Compute available disciplines from tournaments list (only show filters for disciplines that exist)
+  const availableDisciplines = useMemo(() => {
+    const disciplineSet = new Set<string>()
+    tournaments.forEach((t) => {
+      t.disciplines?.forEach((d: DisciplineDetail) => {
+        disciplineSet.add(d.name)
+      })
+    })
+    // Filter disciplineOptions to only include those present in tournaments, maintaining alphabetical order
+    return disciplineOptions.filter((opt) => disciplineSet.has(opt))
+  }, [tournaments])
 
   const fetchUserDataWithToken = async (token: string) => {
     console.log("TournamentFinderClient: Attempting to fetch user data with token.")
@@ -1115,18 +1128,8 @@ export function TournamentFinderClient({
               <CardContent>
                 {/* Flex container for filters and map */}
                 <div className="flex flex-col lg:flex-row gap-6">
-                  {/* Filters Component */}
-                  <div className="lg:w-1/3">
-                    <TournamentFiltersComponent
-                      filters={filters}
-                      onFiltersChange={handleFiltersChange}
-                      disciplineOptions={disciplineOptions}
-                      tournamentTypeOptions={tournamentTypeOptions}
-                    />
-                  </div>
-
-                  {/* OpenLayers Map */}
-                  <div className="lg:w-2/3">
+                  {/* OpenLayers Map - First on mobile, second on desktop */}
+                  <div className="order-1 lg:order-2 lg:w-2/3 h-[400px] lg:h-[500px]">
                     <OpenLayersMap
                       tournaments={filteredTournaments}
                       initialCenter={initialMapCenter}
@@ -1136,6 +1139,34 @@ export function TournamentFinderClient({
                       "TournamentFinderClient: OpenLayersMap component rendered with filteredTournaments count:",
                       filteredTournaments.length,
                     )}
+                  </div>
+
+                  {/* Filters Component - Second on mobile, first on desktop */}
+                  <div className="order-2 lg:order-1 lg:w-1/3">
+                    {/* Mobile collapse toggle */}
+                    <button
+                      className="lg:hidden w-full flex items-center justify-between p-3 bg-blue-50 rounded-lg mb-2 text-blue-800 font-medium"
+                      onClick={() => setFiltersCollapsed(!filtersCollapsed)}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Filter className="w-4 h-4" />
+                        Filters
+                        {(filters.startDate || filters.endDate || filters.disciplines.length > 0 || filters.selectedTypes.length > 0 || filters.showFavorites) && (
+                          <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">Active</span>
+                        )}
+                      </span>
+                      {filtersCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+                    </button>
+                    
+                    {/* Filters - always visible on desktop, collapsible on mobile */}
+                    <div className={`${filtersCollapsed ? 'hidden' : 'block'} lg:block`}>
+                      <TournamentFiltersComponent
+                        filters={filters}
+                        onFiltersChange={handleFiltersChange}
+                        disciplineOptions={availableDisciplines}
+                        tournamentTypeOptions={tournamentTypeOptions}
+                      />
+                    </div>
                   </div>
                 </div>
               </CardContent>
