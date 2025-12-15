@@ -54,8 +54,10 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
       <Link href={`/tournaments/${tournament.id}`} passHref>
         <Card className={`cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 ${isPast ? 'bg-yellow-50 border-yellow-200' : ''}`}>
           <CardContent className="p-4">
-            <div className="flex gap-4">
-              <div className="w-24 h-20 flex-shrink-0">
+            {/* Grid: 4 columns on desktop, 2 on mobile */}
+            <div className="grid grid-cols-[auto_1fr] sm:grid-cols-[auto_1fr_2fr] gap-3 sm:gap-4">
+              {/* Column 1: Logo */}
+              <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
                 <img
                   src={tournament.logo_url || "/placeholder.svg"}
                   alt={tournament.name}
@@ -71,7 +73,8 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
                 </div>
               </div>
 
-              <div className="flex-1 min-w-0">
+              {/* Column 2: Info (name, location, date) */}
+              <div className="min-w-0">
                 <div className="flex justify-between items-start mb-1">
                   <h3 className="font-semibold text-sm truncate pr-2">{tournament.name}</h3>
                   <button
@@ -88,13 +91,13 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
                   </button>
                 </div>
 
-                <div className="flex items-center gap-1 text-xs text-gray-600 mb-2">
-                  <MapPin className="w-3 h-3" />
+                <div className="flex items-center gap-1 text-xs text-gray-600 mb-1">
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
                   <span className="truncate">{tournament.location}</span>
                 </div>
 
-                <div className="flex items-center gap-1 text-xs text-gray-600 mb-2">
-                  <Calendar className="w-3 h-3" />
+                <div className="flex items-center gap-1 text-xs text-gray-600">
+                  <Calendar className="w-3 h-3 flex-shrink-0" />
                   <span>
                     {formatDate(tournament.date)}
                     {tournament.dateTo && tournament.dateTo !== tournament.date && (
@@ -102,37 +105,73 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
                     )}
                   </span>
                 </div>
+              </div>
 
-                <div className="flex flex-wrap gap-1">
-                  {[...tournament.disciplines]
-                    .sort((a, b) => {
-                      // Sort by type order: Open, Male, Female, Other
-                      const typeOrder = { Open: 0, Male: 1, Female: 2, Other: 3 }
-                      const typeA = typeOrder[a.type as keyof typeof typeOrder] ?? 4
-                      const typeB = typeOrder[b.type as keyof typeof typeOrder] ?? 4
-                      if (typeA !== typeB) return typeA - typeB
-                      // Within same type, sort alphabetically by name
-                      return a.name.localeCompare(b.name)
+              {/* Column 3: Disciplines - full width on mobile (second row), 2 cols on desktop */}
+              <div className="col-span-2 sm:col-span-1 flex flex-wrap gap-1 content-start">
+                {(() => {
+                  // Group disciplines by name
+                  const typeOrder = { Open: 0, Male: 1, Female: 2, Other: 3 }
+                  const typeStyles: Record<string, { bg: string; text: string; border: string }> = {
+                    Male: { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe' },
+                    Female: { bg: '#fce7f3', text: '#9d174d', border: '#fbcfe8' },
+                    Open: { bg: '#f3f4f6', text: '#1f2937', border: '#d1d5db' },
+                    Other: { bg: '#f3e8ff', text: '#6b21a8', border: '#e9d5ff' },
+                  }
+                  
+                  const grouped = tournament.disciplines.reduce((acc, disc) => {
+                    if (!acc[disc.name]) {
+                      acc[disc.name] = []
+                    }
+                    if (!acc[disc.name].includes(disc.type)) {
+                      acc[disc.name].push(disc.type)
+                    }
+                    return acc
+                  }, {} as Record<string, string[]>)
+                  
+                  // Sort types within each group
+                  Object.keys(grouped).forEach(name => {
+                    grouped[name].sort((a, b) => {
+                      const orderA = typeOrder[a as keyof typeof typeOrder] ?? 4
+                      const orderB = typeOrder[b as keyof typeof typeOrder] ?? 4
+                      return orderA - orderB
                     })
-                    .map((discipline: DisciplineDetail, index: number) => {
-                      const colorStyle = {
-                        Male: { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' },
-                        Female: { backgroundColor: '#fce7f3', color: '#9d174d', borderColor: '#fbcfe8' },
-                        Open: { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' },
-                        Other: { backgroundColor: '#f3e8ff', color: '#6b21a8', borderColor: '#e9d5ff' },
-                      }[discipline.type] || { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' }
-                      
-                      return (
-                        <span
-                          key={`${discipline.name}-${discipline.type}-${index}`}
-                          className="text-xs px-2 py-0.5 rounded-full border"
-                          style={colorStyle}
-                        >
-                          {discipline.name} ({discipline.type})
-                        </span>
-                      )
-                    })}
-                </div>
+                  })
+                  
+                  // Sort discipline names alphabetically
+                  const sortedNames = Object.keys(grouped).sort((a, b) => a.localeCompare(b))
+                  
+                  return sortedNames.map((name) => (
+                    <span
+                      key={name}
+                      className="inline-flex items-center justify-between text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 min-w-[200px] sm:min-w-[230px]"
+                    >
+                      <span className="font-bold">{name}</span>
+                      <span className="inline-flex items-center gap-1">
+                        {grouped[name].map((type) => {
+                          const style = typeStyles[type] || typeStyles.Open
+                          // Abbreviate Male/Female on mobile
+                          const mobileLabel = type === 'Male' ? 'M' : type === 'Female' ? 'F' : type
+                          const fullLabel = type
+                          return (
+                            <span
+                              key={type}
+                              className="px-1.5 py-0 rounded-full text-[10px] font-medium border text-center"
+                              style={{
+                                backgroundColor: style.bg,
+                                color: style.text,
+                                borderColor: style.border,
+                              }}
+                            >
+                              <span className="sm:hidden">{mobileLabel}</span>
+                              <span className="hidden sm:inline">{fullLabel}</span>
+                            </span>
+                          )
+                        })}
+                      </span>
+                    </span>
+                  ))
+                })()}
               </div>
             </div>
           </CardContent>
