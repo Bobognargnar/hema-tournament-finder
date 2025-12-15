@@ -46,9 +46,6 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
     }
   }
 
-  console.log(tournament)
-  console.log("--------------")
-
   return (
     <div onClick={handleCardClick}>
       <Link href={`/tournaments/${tournament.id}`} passHref>
