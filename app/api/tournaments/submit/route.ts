@@ -17,7 +17,6 @@ interface TournamentSubmission {
   contactEmail: string
   rulesLink: string
   coordinates?: [number, number]
-  submittedBy?: string
   logo_url?: string
 }
 
@@ -101,7 +100,7 @@ export async function POST(request: NextRequest) {
         // Form sends [lon, lat], database stores as [lat, lon]
         coordinates: body.coordinates ? [body.coordinates[1], body.coordinates[0]] : null,
         user_id: userId,
-        submitted_by: body.submittedBy || userEmail,
+        submitted_by: userEmail,
         logo_url: body.logo_url || null,
       }
 

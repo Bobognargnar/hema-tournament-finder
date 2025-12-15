@@ -76,7 +76,6 @@ export async function GET(
       venueDetails: t.venue_details as string,
       contactEmail: t.contact_email as string,
       rulesLink: t.rules_link as string,
-      submittedBy: (t.submitted_by as string) || "",
     }
 
     console.log(`Fetched tournament: ${tournament.name}`)

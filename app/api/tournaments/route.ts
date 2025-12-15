@@ -61,7 +61,6 @@ export async function GET() {
         venueDetails: t.venue_details,
         contactEmail: t.contact_email,
         rulesLink: t.rules_link,
-        submittedBy: t.submitted_by || "",
       }
     })
 

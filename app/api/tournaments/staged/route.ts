@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const url = `${apiBaseUrl}/rest/v1/staged_tournaments`
+    const url = `${apiBaseUrl}/rest/v1/staged_tournaments?tournament_approved=eq.false`
     console.log("Fetching staged tournaments from URL:", url)
 
     const response = await fetch(url, {

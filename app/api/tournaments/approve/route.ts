@@ -84,9 +84,9 @@ export async function POST(request: NextRequest) {
 
     const staged = stagedTournaments[0]
 
-    // Step 2: Insert into tournaments table - copy all fields except id and user_id
+    // Step 2: Insert into tournaments table - copy all fields except id, user_id, submitted_by, created_at
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id, user_id, ...restData } = staged
+    const { id, user_id, submitted_by, created_at,tournament_approved, ...restData } = staged
     const tournamentData = {
       ...restData,
       created_at: new Date().toISOString(), // Set fresh timestamp
@@ -149,22 +149,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Step 4: Delete from staged_tournaments
-    const deleteResponse = await fetch(`${apiBaseUrl}/rest/v1/staged_tournaments?id=eq.${tournamentId}`, {
-      method: "DELETE",
+    // Step 4: Mark staged tournament as approved
+    const updateResponse = await fetch(`${apiBaseUrl}/rest/v1/staged_tournaments?id=eq.${tournamentId}`, {
+      method: "PATCH",
       headers: {
+        "Content-Type": "application/json",
         "apikey": apiKey,
         "Authorization": `Bearer ${userToken}`,
       },
+      body: JSON.stringify({ tournament_approved: true }),
     })
 
-    if (!deleteResponse.ok) {
-      const errorText = await deleteResponse.text()
-      console.error("Failed to delete staged tournament:", deleteResponse.status, errorText)
+    if (!updateResponse.ok) {
+      const errorText = await updateResponse.text()
+      console.error("Failed to update staged tournament:", updateResponse.status, errorText)
       // Tournament was already inserted, so we just log the error
       return NextResponse.json({ 
         success: true, 
-        message: "Tournament approved but failed to remove from staging",
+        message: "Tournament approved but failed to update staging status",
         warning: "Manual cleanup may be required"
       })
     }

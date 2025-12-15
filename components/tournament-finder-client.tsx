@@ -53,7 +53,6 @@ interface TournamentSubmission {
   rulesLink: string
   longitude: string
   latitude: string
-  submittedBy: string
 }
 
 export function TournamentFinderClient({
@@ -95,7 +94,6 @@ export function TournamentFinderClient({
     rulesLink: "",
     longitude: "",
     latitude: "",
-    submittedBy: "",
   })
   const [showLoginDialog, setShowLoginDialog] = useState(false)
   const [showSignupDialog, setShowSignupDialog] = useState(false)
@@ -533,7 +531,6 @@ export function TournamentFinderClient({
 
       const submissionData = {
         ...tournamentForm,
-        submittedBy: userIdentity || "",
         coordinates:
           tournamentForm.longitude && tournamentForm.latitude
             ? [parseFloat(tournamentForm.longitude), parseFloat(tournamentForm.latitude)]
@@ -568,7 +565,6 @@ export function TournamentFinderClient({
           rulesLink: "",
           longitude: "",
           latitude: "",
-          submittedBy: "",
         })
         // Reset logo
         removeLogo()
