@@ -2,7 +2,8 @@
 
 import type React from "react"
 import { useState } from "react"
-import type { Tournament, DisciplineDetail } from "@/types/tournament"
+import type { Tournament, DisciplineDetail, TournamentType } from "@/types/tournament"
+import { TOURNAMENT_TYPE_ORDER, TOURNAMENT_TYPE_STYLES } from "@/types/tournament"
 import { Card, CardContent } from "@/components/ui/card"
 import { Calendar, MapPin, Star } from "lucide-react"
 import Link from "next/link"
@@ -108,14 +109,6 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
               <div className="col-span-2 sm:col-span-1 flex flex-wrap gap-1 content-start">
                 {(() => {
                   // Group disciplines by name
-                  const typeOrder = { Open: 0, Male: 1, Female: 2, Other: 3 }
-                  const typeStyles: Record<string, { bg: string; text: string; border: string }> = {
-                    Male: { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe' },
-                    Female: { bg: '#fce7f3', text: '#9d174d', border: '#fbcfe8' },
-                    Open: { bg: '#f3f4f6', text: '#1f2937', border: '#d1d5db' },
-                    Other: { bg: '#f3e8ff', text: '#6b21a8', border: '#e9d5ff' },
-                  }
-                  
                   const grouped = tournament.disciplines.reduce((acc, disc) => {
                     if (!acc[disc.name]) {
                       acc[disc.name] = []
@@ -124,13 +117,13 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
                       acc[disc.name].push(disc.type)
                     }
                     return acc
-                  }, {} as Record<string, string[]>)
+                  }, {} as Record<string, TournamentType[]>)
                   
-                  // Sort types within each group
+                  // Sort types within each group using centralized order
                   Object.keys(grouped).forEach(name => {
                     grouped[name].sort((a, b) => {
-                      const orderA = typeOrder[a as keyof typeof typeOrder] ?? 4
-                      const orderB = typeOrder[b as keyof typeof typeOrder] ?? 4
+                      const orderA = TOURNAMENT_TYPE_ORDER[a] ?? 99
+                      const orderB = TOURNAMENT_TYPE_ORDER[b] ?? 99
                       return orderA - orderB
                     })
                   })
@@ -146,9 +139,9 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
                       <span className="font-bold">{name}</span>
                       <span className="inline-flex items-center gap-1">
                         {grouped[name].map((type) => {
-                          const style = typeStyles[type] || typeStyles.Open
-                          // Abbreviate Male/Female on mobile
-                          const mobileLabel = type === 'Male' ? 'M' : type === 'Female' ? 'F' : type
+                          const style = TOURNAMENT_TYPE_STYLES[type] || TOURNAMENT_TYPE_STYLES.Other
+                          // Abbreviate Men/Women on mobile
+                          const mobileLabel = type === 'Men' ? 'M' : type === 'Women' ? 'W' : type
                           const fullLabel = type
                           return (
                             <span

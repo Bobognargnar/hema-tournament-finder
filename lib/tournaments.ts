@@ -1,4 +1,4 @@
-import type { Tournament } from "@/types/tournament"
+import type { Tournament, TournamentType } from "@/types/tournament"
 
 // Server-side fetch: Fetch all tournaments directly from Supabase (for SSR)
 export const fetchTournamentsServer = async (): Promise<Tournament[]> => {
@@ -67,7 +67,7 @@ export interface StagedTournament {
   location: string
   date: string
   dateTo: string
-  disciplines: { name: string; type: "Male" | "Female" | "Open" | "Other" }[]
+  disciplines: { name: string; type: TournamentType }[]
   description: string
   registrationLink: string
   venueDetails: string

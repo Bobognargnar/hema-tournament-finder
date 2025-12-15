@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import type { TournamentType } from "@/types/tournament"
 
 interface StagedTournament {
   id: number
@@ -7,7 +8,7 @@ interface StagedTournament {
   name: string
   location: string
   date: string
-  disciplines: { name: string; type: "Male" | "Female" | "Open" | "Other" }[]
+  disciplines: { name: string; type: TournamentType }[]
   description: string
   registration_link: string
   venue_details: string

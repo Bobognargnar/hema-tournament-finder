@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Calendar, MapPin, LinkIcon, Mail, BookOpen, Loader2, X } from "lucide-react"
 import { fetchTournamentById } from "@/lib/tournaments"
-import type { Tournament, DisciplineDetail } from "@/types/tournament"
+import type { Tournament, DisciplineDetail, TournamentType } from "@/types/tournament"
+import { TOURNAMENT_TYPE_ORDER, TOURNAMENT_TYPE_STYLES } from "@/types/tournament"
 import { OpenLayersMap } from "@/components/OpenLayersMap"
 import { useRouter } from "next/navigation"
 
@@ -147,21 +148,20 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                   {tournament.disciplines && tournament.disciplines.length > 0 ? (
                     [...tournament.disciplines]
                       .sort((a, b) => {
-                        // Sort by type order: Open, Male, Female, Other
-                        const typeOrder = { Open: 0, Male: 1, Female: 2, Other: 3 }
-                        const typeA = typeOrder[a.type as keyof typeof typeOrder] ?? 4
-                        const typeB = typeOrder[b.type as keyof typeof typeOrder] ?? 4
+                        // Sort by type order using centralized order
+                        const typeA = TOURNAMENT_TYPE_ORDER[a.type] ?? 99
+                        const typeB = TOURNAMENT_TYPE_ORDER[b.type] ?? 99
                         if (typeA !== typeB) return typeA - typeB
                         // Within same type, sort alphabetically by name
                         return a.name.localeCompare(b.name)
                       })
                       .map((discipline: DisciplineDetail, index: number) => {
+                        const style = TOURNAMENT_TYPE_STYLES[discipline.type] || TOURNAMENT_TYPE_STYLES.Other
                         const colorStyle = {
-                          Male: { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' },
-                          Female: { backgroundColor: '#fce7f3', color: '#9d174d', borderColor: '#fbcfe8' },
-                          Open: { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' },
-                          Other: { backgroundColor: '#f3e8ff', color: '#6b21a8', borderColor: '#e9d5ff' },
-                        }[discipline.type] || { backgroundColor: '#f3f4f6', color: '#1f2937', borderColor: '#e5e7eb' }
+                          backgroundColor: style.bg,
+                          color: style.text,
+                          borderColor: style.border,
+                        }
                         
                         return (
                           <span

@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
+import type { TournamentType } from "@/types/tournament"
 
 interface DisciplineRow {
   name: string
-  type: "Male" | "Female" | "Open" | "Other"
+  type: TournamentType
 }
 
 interface TournamentSubmission {
