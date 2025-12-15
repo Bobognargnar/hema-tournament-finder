@@ -54,6 +54,7 @@ export async function GET() {
         dateTo: t.date_to || t.date, // Default to start date if not set
         disciplines: t.disciplines,
         image: t.image || "/placeholder.svg",
+        logo_url: t.logo_url || null,
         coordinates: coords,
         description: t.description,
         registrationLink: t.registration_link,

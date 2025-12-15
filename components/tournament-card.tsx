@@ -46,6 +46,9 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
     }
   }
 
+  console.log(tournament)
+  console.log("--------------")
+
   return (
     <div onClick={handleCardClick}>
       <Link href={`/tournaments/${tournament.id}`} passHref>
@@ -54,7 +57,7 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
             <div className="flex gap-4">
               <div className="w-24 h-20 flex-shrink-0">
                 <img
-                  src={tournament.image || "/placeholder.svg"}
+                  src={tournament.logo_url || "/placeholder.svg"}
                   alt={tournament.name}
                   className="w-full h-full object-cover rounded-md bg-gray-100"
                   onError={(e) => {

@@ -110,3 +110,4 @@ For questions about this privacy policy or to exercise your rights, contact us a
 
 You have the right to lodge a complaint with a supervisory authority if you believe your data protection rights have been violated.
 
+

@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Calendar, MapPin, LinkIcon, Mail, BookOpen, Loader2 } from "lucide-react"
+import { ArrowLeft, Calendar, MapPin, LinkIcon, Mail, BookOpen, Loader2, X } from "lucide-react"
 import { fetchTournamentById } from "@/lib/tournaments"
 import type { Tournament, DisciplineDetail } from "@/types/tournament"
 import { OpenLayersMap } from "@/components/OpenLayersMap"
@@ -22,6 +22,7 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
   const [tournament, setTournament] = useState<Tournament | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showImageModal, setShowImageModal] = useState(false)
 
   useEffect(() => {
     const loadTournament = async () => {
@@ -114,19 +115,31 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
           <>
             <Card>
               <CardHeader>
-                <CardTitle className="text-3xl font-bold">{tournament.name}</CardTitle>
-                <div className="flex items-center gap-2 text-gray-600 text-lg">
-                  <MapPin className="w-5 h-5" />
-                  <span>{tournament.location}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600 text-lg">
-                  <Calendar className="w-5 h-5" />
-                  <span>
-                    {formatDate(tournament.date)}
-                    {tournament.dateTo && tournament.dateTo !== tournament.date && (
-                      <> - {formatDate(tournament.dateTo)}</>
-                    )}
-                  </span>
+                <div className="flex items-start gap-4">
+                  {tournament.logo_url && (
+                    <img
+                      src={tournament.logo_url}
+                      alt={`${tournament.name} logo`}
+                      className="w-60 h-60 object-contain rounded-md bg-gray-100 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => setShowImageModal(true)}
+                    />
+                  )}
+                  <div className="flex-1">
+                    <CardTitle className="text-3xl font-bold">{tournament.name}</CardTitle>
+                    <div className="flex items-center gap-2 text-gray-600 text-lg mt-2">
+                      <MapPin className="w-5 h-5" />
+                      <span>{tournament.location}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600 text-lg">
+                      <Calendar className="w-5 h-5" />
+                      <span>
+                        {formatDate(tournament.date)}
+                        {tournament.dateTo && tournament.dateTo !== tournament.date && (
+                          <> - {formatDate(tournament.dateTo)}</>
+                        )}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -242,6 +255,30 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                 </div>
               </CardContent>
             </Card>
+
+            {/* Image Modal */}
+            {showImageModal && tournament.logo_url && (
+              <div 
+                className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+                onClick={() => setShowImageModal(false)}
+              >
+                <div className="relative max-w-3xl max-h-[90vh]">
+                  <button
+                    onClick={() => setShowImageModal(false)}
+                    className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors"
+                    aria-label="Close image"
+                  >
+                    <X className="w-8 h-8" />
+                  </button>
+                  <img
+                    src={tournament.logo_url}
+                    alt={`${tournament.name} logo`}
+                    className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>

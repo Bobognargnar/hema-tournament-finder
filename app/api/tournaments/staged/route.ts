@@ -15,6 +15,7 @@ interface StagedTournament {
   coordinates: [number, number] | null
   created_at: string
   submitted_by: string
+  logo_url: string | null
 }
 
 // GET - Fetch user's staged tournaments from Supabase (requires auth)
@@ -86,6 +87,7 @@ export async function GET(request: NextRequest) {
       createdAt: t.created_at,
       submittedBy: t.submitted_by || "",
       image: "/placeholder.svg",
+      logo_url: t.logo_url || null,
     }))
 
     return NextResponse.json(transformed)

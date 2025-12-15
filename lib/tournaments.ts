@@ -16,6 +16,7 @@ export interface StagedTournament {
   createdAt: string
   submittedBy: string
   image: string
+  logo_url?: string | null
 }
 
 // Fetch all tournaments via server-side API route

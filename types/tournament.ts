@@ -13,6 +13,7 @@ export interface Tournament {
   dateTo: string // End date
   disciplines: DisciplineDetail[] // Changed to array of DisciplineDetail objects
   image: string
+  logo_url?: string | null
   coordinates: [number, number]
   description: string
   registrationLink: string

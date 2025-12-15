@@ -22,7 +22,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Sword, Map, LogIn, Loader2, LogOut, User, Plus, Trash2, Check, MapPin, ChevronDown, ChevronUp, Filter } from "lucide-react"
+import { Sword, Map, LogIn, Loader2, LogOut, User, Plus, Trash2, Check, MapPin, ChevronDown, ChevronUp, Filter, Upload, X } from "lucide-react"
 
 interface UserData {
   name: string
@@ -104,6 +104,8 @@ export function TournamentFinderClient({
   const [signupForm, setSignupForm] = useState({ email: "", password: "", confirmPassword: "" })
   const [signupLoading, setSignupLoading] = useState(false)
   const [geocodingLoading, setGeocodingLoading] = useState(false)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [filtersCollapsed, setFiltersCollapsed] = useState(true) // Collapsed by default on mobile
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -426,6 +428,45 @@ export function TournamentFinderClient({
     }
   }
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) {
+      setLogoFile(null)
+      setLogoPreview(null)
+      return
+    }
+
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png"]
+    if (!validTypes.includes(file.type)) {
+      alert("Invalid file type. Only JPEG and PNG images are allowed.")
+      e.target.value = ""
+      return
+    }
+
+    // Validate file extension
+    const fileName = file.name.toLowerCase()
+    if (!fileName.endsWith(".jpg") && !fileName.endsWith(".jpeg") && !fileName.endsWith(".png")) {
+      alert("Invalid file extension. Only .jpg, .jpeg, and .png files are allowed.")
+      e.target.value = ""
+      return
+    }
+
+    setLogoFile(file)
+    
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file)
+    setLogoPreview(previewUrl)
+  }
+
+  const removeLogo = () => {
+    setLogoFile(null)
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview)
+      setLogoPreview(null)
+    }
+  }
+
   const handleSubmitTournament = async () => {
     console.log("TournamentFinderClient: handleSubmitTournament called.")
     
@@ -466,6 +507,30 @@ export function TournamentFinderClient({
 
     setSubmitLoading(true)
     try {
+      // Upload logo if provided
+      let logoUrl: string | undefined
+      if (logoFile) {
+        const formData = new FormData()
+        formData.append("file", logoFile)
+
+        const uploadResponse = await fetch("/api/upload-logo", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: formData,
+        })
+
+        const uploadData = await uploadResponse.json()
+        if (!uploadData.success) {
+          alert(`Failed to upload logo: ${uploadData.message}`)
+          setSubmitLoading(false)
+          return
+        }
+        logoUrl = uploadData.url
+        console.log("Logo uploaded successfully:", logoUrl)
+      }
+
       const submissionData = {
         ...tournamentForm,
         submittedBy: userIdentity || "",
@@ -473,6 +538,7 @@ export function TournamentFinderClient({
           tournamentForm.longitude && tournamentForm.latitude
             ? [parseFloat(tournamentForm.longitude), parseFloat(tournamentForm.latitude)]
             : undefined,
+        logo_url: logoUrl,
       }
       const response = await fetch("/api/tournaments/submit", {
         method: "POST",
@@ -504,6 +570,8 @@ export function TournamentFinderClient({
           latitude: "",
           submittedBy: "",
         })
+        // Reset logo
+        removeLogo()
         // Reload staged tournaments to show the new submission
         if (authToken) {
           const updatedStaged = await fetchStagedTournaments(authToken)
@@ -921,6 +989,50 @@ export function TournamentFinderClient({
                           />
                         </div>
 
+                        <div>
+                          <Label htmlFor="tournament-logo">Tournament Logo (optional)</Label>
+                          <p className="text-xs text-gray-500 mb-2">Upload a JPEG or PNG image for your tournament logo.</p>
+                          {!logoPreview ? (
+                            <div className="flex items-center gap-2">
+                              <label
+                                htmlFor="tournament-logo"
+                                className={`flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors ${submitLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                <Upload className="w-4 h-4 text-gray-500" />
+                                <span className="text-sm text-gray-600">Choose file</span>
+                              </label>
+                              <input
+                                id="tournament-logo"
+                                type="file"
+                                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                                onChange={handleLogoChange}
+                                disabled={submitLoading}
+                                className="hidden"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-4">
+                              <div className="relative">
+                                <img
+                                  src={logoPreview}
+                                  alt="Logo preview"
+                                  className="w-20 h-20 object-contain rounded-md border bg-gray-50"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={removeLogo}
+                                  disabled={submitLoading}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                  title="Remove logo"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                              <span className="text-sm text-gray-600">{logoFile?.name}</span>
+                            </div>
+                          )}
+                        </div>
+
                         <div className="flex justify-end gap-2 pt-4">
                           <Button variant="outline" onClick={() => setShowSubmitDialog(false)} disabled={submitLoading}>
                             Cancel
@@ -1239,6 +1351,15 @@ export function TournamentFinderClient({
                       <Card key={tournament.id} className="bg-white border-amber-100">
                         <CardContent className="p-4">
                           <div className="flex gap-4">
+                            {tournament.logo_url && (
+                              <div className="w-16 h-16 flex-shrink-0">
+                                <img
+                                  src={tournament.logo_url}
+                                  alt={`${tournament.name} logo`}
+                                  className="w-full h-full object-contain rounded-md bg-gray-100"
+                                />
+                              </div>
+                            )}
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold text-sm truncate">{tournament.name}</h3>
                               {tournament.location && (
