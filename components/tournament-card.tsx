@@ -164,6 +164,18 @@ export default function TournamentCard({ tournament, isFavorite, onToggleFavorit
                 })()}
               </div>
             </div>
+
+            {/* Latest Update */}
+            {tournament.latestUpdate && (
+              <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-xs text-green-800 line-clamp-2">
+                  <span className="font-semibold">
+                    Last update ({new Date(tournament.latestUpdate.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}):
+                  </span>{" "}
+                  {tournament.latestUpdate.message}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </Link>

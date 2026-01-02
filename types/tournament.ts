@@ -28,6 +28,12 @@ export const TOURNAMENT_TYPE_STYLES: Record<TournamentType, { bg: string; text: 
   Other: { bg: '#f3e8ff', text: '#6b21a8', border: '#e9d5ff' },
 }
 
+export interface TournamentUpdate {
+  id: number
+  message: string
+  created_at: string
+}
+
 export interface Tournament {
   id: number
   name: string
@@ -43,6 +49,7 @@ export interface Tournament {
   venueDetails: string
   contactEmail: string
   rulesLink: string
+  latestUpdate?: TournamentUpdate | null // Latest update for this tournament
 }
 
 export interface TournamentFilters {

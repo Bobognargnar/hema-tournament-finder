@@ -110,6 +110,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to approve tournament" }, { status: insertResponse.status })
     }
 
+    // Step 2.5: Add tournament owner if user_id exists
+    const insertedTournaments = await insertResponse.json()
+    if (insertedTournaments.length > 0 && staged.user_id) {
+      const newTournamentId = insertedTournaments[0].id
+      
+      const ownerResponse = await fetch(`${apiBaseUrl}/rest/v1/tournament_owners`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": apiKey,
+          "Authorization": `Bearer ${userToken}`,
+        },
+        body: JSON.stringify({
+          tournament_id: newTournamentId,
+          user_id: staged.user_id,
+        }),
+      })
+
+      if (!ownerResponse.ok) {
+        console.warn("Failed to set tournament owner:", ownerResponse.status)
+        // Don't fail the approval, just log the warning
+      } else {
+        console.log(`Tournament owner set: user ${staged.user_id} for tournament ${newTournamentId}`)
+      }
+    }
+
     // Step 3: Send email notification to user (only after successful Supabase verification)
     const emailEdgeUrl = process.env.EMAIL_USER_EDGE_URL
     if (emailEdgeUrl && staged.submitted_by) {

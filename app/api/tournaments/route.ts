@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
-import type { Tournament } from "@/types/tournament"
+import type { Tournament, TournamentUpdate } from "@/types/tournament"
+
+interface RawUpdate {
+  id: number
+  tournament_id: number
+  message: string
+  created_at: string
+}
 
 // GET - Fetch all tournaments from Supabase
 export async function GET() {
@@ -19,35 +26,64 @@ export async function GET() {
   try {
     console.log("Fetching tournaments from Supabase...")
     
-    const response = await fetch(`${apiBaseUrl}/rest/v1/tournaments`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": apiKey,
-        "Authorization": `Bearer ${apiKey}`,
-      },
-    })
+    // Fetch tournaments and updates in parallel
+    const [tournamentsResponse, updatesResponse] = await Promise.all([
+      fetch(`${apiBaseUrl}/rest/v1/tournaments`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": apiKey,
+          "Authorization": `Bearer ${apiKey}`,
+        },
+      }),
+      fetch(`${apiBaseUrl}/rest/v1/tournament_updates?order=created_at.desc`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": apiKey,
+          "Authorization": `Bearer ${apiKey}`,
+        },
+      }),
+    ])
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "")
-      console.error("Failed to fetch tournaments:", response.status, errorText)
+    if (!tournamentsResponse.ok) {
+      const errorText = await tournamentsResponse.text().catch(() => "")
+      console.error("Failed to fetch tournaments:", tournamentsResponse.status, errorText)
       return NextResponse.json(
-        { error: `Failed to fetch tournaments: ${response.status}` },
-        { status: response.status }
+        { error: `Failed to fetch tournaments: ${tournamentsResponse.status}` },
+        { status: tournamentsResponse.status }
       )
     }
 
-    const rawTournaments = await response.json()
+    const rawTournaments = await tournamentsResponse.json()
     console.log(`Fetched ${rawTournaments.length} tournaments from Supabase`)
+
+    // Process updates - create a map of tournament_id to latest update
+    let latestUpdatesMap: Map<number, TournamentUpdate> = new Map()
+    if (updatesResponse.ok) {
+      const rawUpdates: RawUpdate[] = await updatesResponse.json()
+      // Since updates are ordered by created_at desc, the first one for each tournament is the latest
+      for (const update of rawUpdates) {
+        if (!latestUpdatesMap.has(update.tournament_id)) {
+          latestUpdatesMap.set(update.tournament_id, {
+            id: update.id,
+            message: update.message,
+            created_at: update.created_at,
+          })
+        }
+      }
+      console.log(`Fetched updates for ${latestUpdatesMap.size} tournaments`)
+    }
 
     // Transform snake_case to camelCase
     const tournaments: Tournament[] = rawTournaments.map((t: Record<string, unknown>) => {
       // Database stores as [lat, lon], OpenLayers needs [lon, lat]
       const rawCoords = t.coordinates as [number, number] | null
       const coords = rawCoords ? [rawCoords[1], rawCoords[0]] as [number, number] : null
+      const tournamentId = t.id as number
       
       return {
-        id: t.id,
+        id: tournamentId,
         name: t.name,
         location: t.location,
         date: t.date,
@@ -61,6 +97,7 @@ export async function GET() {
         venueDetails: t.venue_details,
         contactEmail: t.contact_email,
         rulesLink: t.rules_link,
+        latestUpdate: latestUpdatesMap.get(tournamentId) || null,
       }
     })
 

@@ -1,4 +1,11 @@
-import type { Tournament, TournamentType } from "@/types/tournament"
+import type { Tournament, TournamentType, TournamentUpdate } from "@/types/tournament"
+
+interface RawUpdate {
+  id: number
+  tournament_id: number
+  message: string
+  created_at: string
+}
 
 // Server-side fetch: Fetch all tournaments directly from Supabase (for SSR)
 export const fetchTournamentsServer = async (): Promise<Tournament[]> => {
@@ -11,32 +18,61 @@ export const fetchTournamentsServer = async (): Promise<Tournament[]> => {
   }
 
   try {
-    const response = await fetch(`${apiBaseUrl}/rest/v1/tournaments`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": apiKey,
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      // Revalidate every 60 seconds for ISR
-      next: { revalidate: 60 },
-    })
+    // Fetch tournaments and updates in parallel
+    const [tournamentsResponse, updatesResponse] = await Promise.all([
+      fetch(`${apiBaseUrl}/rest/v1/tournaments`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": apiKey,
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        // Revalidate every 60 seconds for ISR
+        next: { revalidate: 60 },
+      }),
+      fetch(`${apiBaseUrl}/rest/v1/tournament_updates?order=created_at.desc`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": apiKey,
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        next: { revalidate: 60 },
+      }),
+    ])
 
-    if (!response.ok) {
-      console.error("Failed to fetch tournaments (server):", response.status)
+    if (!tournamentsResponse.ok) {
+      console.error("Failed to fetch tournaments (server):", tournamentsResponse.status)
       return []
     }
 
-    const rawTournaments = await response.json()
+    const rawTournaments = await tournamentsResponse.json()
+
+    // Process updates - create a map of tournament_id to latest update
+    let latestUpdatesMap: Map<number, TournamentUpdate> = new Map()
+    if (updatesResponse.ok) {
+      const rawUpdates: RawUpdate[] = await updatesResponse.json()
+      // Since updates are ordered by created_at desc, the first one for each tournament is the latest
+      for (const update of rawUpdates) {
+        if (!latestUpdatesMap.has(update.tournament_id)) {
+          latestUpdatesMap.set(update.tournament_id, {
+            id: update.id,
+            message: update.message,
+            created_at: update.created_at,
+          })
+        }
+      }
+    }
 
     // Transform snake_case to camelCase
     const tournaments: Tournament[] = rawTournaments.map((t: Record<string, unknown>) => {
       // Database stores as [lat, lon], OpenLayers needs [lon, lat]
       const rawCoords = t.coordinates as [number, number] | null
       const coords = rawCoords ? [rawCoords[1], rawCoords[0]] as [number, number] : null
+      const tournamentId = t.id as number
 
       return {
-        id: t.id,
+        id: tournamentId,
         name: t.name,
         location: t.location,
         date: t.date,
@@ -50,6 +86,7 @@ export const fetchTournamentsServer = async (): Promise<Tournament[]> => {
         venueDetails: t.venue_details,
         contactEmail: t.contact_email,
         rulesLink: t.rules_link,
+        latestUpdate: latestUpdatesMap.get(tournamentId) || null,
       }
     })
 
@@ -150,6 +187,33 @@ export const fetchStagedTournaments = async (token: string): Promise<StagedTourn
     return tournaments
   } catch (error) {
     console.error("Failed to fetch staged tournaments:", error)
+    return []
+  }
+}
+
+// Fetch tournament IDs owned by the authenticated user
+// Returns array of tournament IDs that the user can edit
+export const fetchOwnedTournaments = async (token: string): Promise<number[]> => {
+  try {
+    const response = await fetch("/api/user/owned-tournaments", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return []
+      }
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    return data.ownedTournamentIds || []
+  } catch (error) {
+    console.error("Failed to fetch owned tournaments:", error)
     return []
   }
 }
